@@ -26,7 +26,9 @@ declare -r APPL_NAME=$(basename "${0}")
 # Código de error cuando el script no se ejecuta como root.
 declare -r EXIT_ERROR_NON_ROOT=254
 
-declare -r MAPPER_USERNAME=mapeador2
+declare -r MAPPER_USERNAME="mapeador"
+
+declare -r MAPPER_PASSWORD="osm-2004"
 
 function trapErrorOn() {
  trap '{ printf "\nERROR: The script did not finish correctly. Line number: ${LINENO}.\n" ; exit ;}' \
@@ -64,7 +66,7 @@ function deletesUser() {
  set -e
  if [[ "${QTY}" -ne 0 ]]; then
   # El usuario existe, por lo tanto lo borra.
-  userdel -r -Z ${MAPPER_USERNAME}
+  userdel -f ${MAPPER_USERNAME}
  fi
  
  # Verifica si el home directory existe.
@@ -77,17 +79,19 @@ function deletesUser() {
 # Crea el usuario y asigna las propiedades que se tengan.
 function createsUser() {
  # Crea el usuario.
- useradd -m "${MAPPER_USERNAME}"
+ useradd -m -c "Mapeador" -s /bin/bash "${MAPPER_USERNAME}"
  
  # Copia la imagen del usuario.
- umask 002
- mkdir -p "/var/lib/AccountsService/icons/${MAPPER_USERNAME}"
- cp "images/Imagen-${MAPPER_USERNAME}" \
+ umask 033
+ cp "images/Imagen-${MAPPER_USERNAME}-icon" \
    "/var/lib/AccountsService/icons/${MAPPER_USERNAME}"
  
  # Copia la configuración para usar la imagen.
- umask 077
- mkdir -p "/var/lib/AccountsService/icons/${MAPPER_USERNAME}"
+ cp "conf/${MAPPER_USERNAME}" \
+   "/var/lib/AccountsService/users/${MAPPER_USERNAME}"
+
+ # Asigna una contraseña.
+ echo "${MAPPER_USERNAME}:${MAPPER_PASSWORD}" | chpasswd
 }
 
 # Activa la trampa que captura el error de ejecución.
