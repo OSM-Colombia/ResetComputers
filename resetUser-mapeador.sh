@@ -30,6 +30,8 @@ declare -r MAPPER_USERNAME="mapeador"
 
 declare -r MAPPER_PASSWORD="osm-2004"
 
+# FUNCIONES.
+
 function trapErrorOn() {
  trap '{ printf "\nERROR: The script did not finish correctly. Line number: ${LINENO}.\n" ; exit ;}' \
    ERR
@@ -93,6 +95,8 @@ function createsUser() {
  # Asigna una contraseña.
  echo "${MAPPER_USERNAME}:${MAPPER_PASSWORD}" | chpasswd
 }
+
+# MAIN.
 
 # Activa la trampa que captura el error de ejecución.
 trapErrorOn
