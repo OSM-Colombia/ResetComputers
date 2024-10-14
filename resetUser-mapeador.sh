@@ -53,7 +53,7 @@ EOT
 }
 
 function checkEnv() {
- if [[ $EUID -ne 0 ]]; then
+ if [[ ${EUID} -ne 0 ]]; then
   echo "ERROR: Debes ejecutar este script como root."
   exit "${EXIT_ERROR_NON_ROOT}"
  fi
@@ -126,3 +126,4 @@ deletesUser
 # Crea el usuario incluyendo todas las propiedades.
 createsUser
 
+echo "Usuario 'mapeador' reseteado"
