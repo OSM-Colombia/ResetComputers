@@ -52,11 +52,19 @@ Version: ${VERSION}
 EOT
 }
 
+# Chequea que el entorno de ejecución sea el correcto.
+# Que se esté ejecutando con root.
 function checkEnv() {
  if [[ ${EUID} -ne 0 ]]; then
   echo "ERROR: Debes ejecutar este script como root."
   exit "${EXIT_ERROR_NON_ROOT}"
  fi
+}
+
+# Mata todos los procesos que se estén ejecutando con el usuario.
+function killUser() {
+ MAPEADOR_ID=$(id -u "${MAPPER_USERNAME}")
+ pkill -u "${MAPEADOR_ID}"
 }
 
 # Borra el usuario completamente, incluyendo home y cualquier otra
@@ -133,6 +141,9 @@ set -u
 
 # Chequeos iniciales
 checkEnv
+
+# Matar procesos del usuario.
+killUser
 
 # Borra todo rastro del usuario.
 deletesUser
