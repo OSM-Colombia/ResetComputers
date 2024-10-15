@@ -31,7 +31,7 @@ declare -r MAPPER_USERNAME="mapeador"
 declare -r MAPPER_PASSWORD="osm-2004"
 
 declare -r AUTOSTART_DIR="/home/${MAPPER_USERNAME}/.config/autostart"
-declare -r MAPPER_SCRIPT="/home/${MAPPER_USERNAME}/runOnce.sh"
+declare -r MAPPER_SCRIPT="${AUTOSTART_DIR}/runOnce.sh"
 
 declare -r LOG="output-$(date +%Y%m%d%H%M%S).log"
 
@@ -123,7 +123,7 @@ function createScript() {
  chmod 644 "/home/${MAPPER_USERNAME}/Imágenes/fondo.png"
 
  mkdir -p "${AUTOSTART_DIR}"
- chown "${MAPPER_USERNAME}" /home/${MAPPER_USERNAME}/.config/ "${AUTOSTART_DIR}"
+ chown "${MAPPER_USERNAME}"."${MAPPER_USERNAME}" /home/${MAPPER_USERNAME}/.config/ "${AUTOSTART_DIR}"
  chmod 755 /home/${MAPPER_USERNAME}/.config/ "${AUTOSTART_DIR}"
 
  cat << EOF > "${MAPPER_SCRIPT}"
@@ -133,8 +133,6 @@ function createScript() {
 #
 # Generado automáticamente.
 
-# Espere a que se inicie el usuario.
-sleep 15
 # Pone el fondo de pantalla.
 PATH_TO_WALLPAPER="/home/${MAPPER_USERNAME}/Imágenes/fondo.png"
 kwriteconfig5 \
@@ -145,11 +143,9 @@ kwriteconfig5 \
           --group 'org.kde.image'                                                   \\
             --group 'General'                                                       \\
               --key 'Image' "\${PATH_TO_WALLPAPER}"
-sed -i '$ d' ~/.bashrc
 EOF
- chown "${MAPPER_USERNAME}" "${MAPPER_SCRIPT}"
+ chown "${MAPPER_USERNAME}"."${MAPPER_USERNAME}" "${MAPPER_SCRIPT}"
  chmod 755 "${MAPPER_SCRIPT}"
- echo "${MAPPER_SCRIPT}" >> "/home/${MAPPER_USERNAME}/.bashrc"
 }
 
 # MAIN.
