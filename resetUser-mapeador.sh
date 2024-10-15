@@ -94,7 +94,7 @@ function createsUser() {
  cp "conf/${MAPPER_USERNAME}" \
    "/var/lib/AccountsService/users/${MAPPER_USERNAME}"
 
- cp "conf/Imagen-${MAPPER_USERNAME}-358.jpg" \
+ cp "images/Imagen-${MAPPER_USERNAME}-358.jpg" \
    "~${MAPPER_USERNAME}/.face"
 
  # Pone el fondo de pantalla.
