@@ -30,6 +30,8 @@ declare -r MAPPER_USERNAME="mapeador"
 
 declare -r MAPPER_PASSWORD="osm-2004"
 
+declare -r MAPPER_SCRIPT="/home/${MAPPER_USERNAME}/runOnce.sh"
+
 declare -r LOG="output-$(date +%Y%m%d%H%M%S).log"
 
 # FUNCIONES.
@@ -108,10 +110,21 @@ function createsUser() {
 
  cp "images/Imagen-${MAPPER_USERNAME}-358.jpg" \
    "/home/${MAPPER_USERNAME}/.face"
+}
 
- # Pone el fondo de pantalla.
- cp 'images/fondo.png' "/home/${MAPPER_USERNAME}/Imágenes"
- PATH_TO_WALLPAPER="/home/${MAPPER_USERNAME}/Imágenes"
+# Crea un script para ser ejecutado por el usuario la primera vez que entra.
+function createScript() {
+
+ cat << EOF > "${MAPPER_SCRIPT}"
+#!/bin/bash
+
+# Script para ejecutar una vez que termina de configurar el usuario.
+#
+# Generado automáticamente.
+
+# Pone el fondo de pantalla.
+cp 'images/fondo.png' "/home/${MAPPER_USERNAME}/Imágenes"
+PATH_TO_WALLPAPER="/home/${MAPPER_USERNAME}/Imágenes"
 kwriteconfig5 \
   --file "/home/${MAPPER_USERNAME}/.config/plasma-org.kde.plasma.desktop-appletsrc" \
     --group 'Containments'                                       \
@@ -120,6 +133,11 @@ kwriteconfig5 \
           --group 'org.kde.image'                                \
             --group 'General'                                    \
               --key 'Image' "${PATH_TO_WALLPAPER}"
+sed -i '$ d' ~/.bashrc
+EOF
+ chown "${MAPPER_USERNAME}" "${MAPPER_SCRIPT}"
+ chmod 755 "${MAPPER_SCRIPT}"
+ echo "${MAPPER_SCRIPT}" >> "/home/${MAPPER_USERNAME}/.bashrc
 }
 
 # MAIN.
@@ -154,5 +172,8 @@ deletesUser >> "${LOG}"
 
 # Crea el usuario incluyendo todas las propiedades.
 createsUser >> "${LOG}"
+
+# Crea script para correr después del login.
+createScript >> "${LOG}"
 
 echo "Usuario 'mapeador' reseteado"
