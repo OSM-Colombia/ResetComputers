@@ -126,7 +126,7 @@ function createScript() {
 # Espere a que se inicie el usuario.
 sleep 15
 # Pone el fondo de pantalla.
-PATH_TO_WALLPAPER="/home/${MAPPER_USERNAME}/Imágenes"
+PATH_TO_WALLPAPER="/home/${MAPPER_USERNAME}/Imágenes/fondo.png"
 kwriteconfig5 \
   --file "/home/${MAPPER_USERNAME}/.config/plasma-org.kde.plasma.desktop-appletsrc" \\
     --group 'Containments'                                                          \\
