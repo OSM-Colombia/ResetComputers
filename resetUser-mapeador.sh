@@ -123,6 +123,8 @@ function createScript() {
 #
 # Generado automáticamente.
 
+# Espere a que se inicie el usuario.
+sleep 15
 # Pone el fondo de pantalla.
 PATH_TO_WALLPAPER="/home/${MAPPER_USERNAME}/Imágenes"
 kwriteconfig5 \
