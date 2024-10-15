@@ -132,12 +132,12 @@ kwriteconfig5 \
         --group 'Wallpaper'                                      \
           --group 'org.kde.image'                                \
             --group 'General'                                    \
-              --key 'Image' "${PATH_TO_WALLPAPER}"
+              --key 'Image' "\${PATH_TO_WALLPAPER}"
 sed -i '$ d' ~/.bashrc
 EOF
  chown "${MAPPER_USERNAME}" "${MAPPER_SCRIPT}"
  chmod 755 "${MAPPER_SCRIPT}"
- echo "${MAPPER_SCRIPT}" >> "/home/${MAPPER_USERNAME}/.bashrc
+ echo "${MAPPER_SCRIPT}" >> "/home/${MAPPER_USERNAME}/.bashrc"
 }
 
 # MAIN.
