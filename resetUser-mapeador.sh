@@ -30,6 +30,8 @@ declare -r MAPPER_USERNAME="mapeador"
 
 declare -r MAPPER_PASSWORD="osm-2004"
 
+declare -r LOG="output-$(date +%Y%m%d%H%M%S).log"
+
 # FUNCIONES.
 
 function trapErrorOn() {
@@ -140,15 +142,15 @@ done
 set -u
 
 # Chequeos iniciales
-checkEnv
+checkEnv >> "${LOG}"
 
 # Matar procesos del usuario.
-killUser
+killUser >> "${LOG}"
 
 # Borra todo rastro del usuario.
-deletesUser
+deletesUser >> "${LOG}"
 
 # Crea el usuario incluyendo todas las propiedades.
-createsUser
+createsUser >> "${LOG}"
 
 echo "Usuario 'mapeador' reseteado"
