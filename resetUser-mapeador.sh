@@ -95,13 +95,13 @@ function createsUser() {
    "/var/lib/AccountsService/users/${MAPPER_USERNAME}"
 
  cp "images/Imagen-${MAPPER_USERNAME}-358.jpg" \
-   "~${MAPPER_USERNAME}/.face"
+   "/home/${MAPPER_USERNAME}/.face"
 
  # Pone el fondo de pantalla.
- cp 'images/fondo.png' "~${MAPPER_USERNAME}/Imágenes"
- PATH_TO_WALLPAPER="~${MAPPER_USERNAME}/Imágenes"
+ cp 'images/fondo.png' "/home/${MAPPER_USERNAME}/Imágenes"
+ PATH_TO_WALLPAPER="/home/${MAPPER_USERNAME}/Imágenes"
 kwriteconfig5
-  --file "~${MAPPER_USERNAME}/.config/plasma-org.kde.plasma.desktop-appletsrc" \
+  --file "/home/${MAPPER_USERNAME}/.config/plasma-org.kde.plasma.desktop-appletsrc" \
     --group 'Containments'                                       \
       --group '1'                                                \
         --group 'Wallpaper'                                      \
