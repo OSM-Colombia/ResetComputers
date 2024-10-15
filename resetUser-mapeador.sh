@@ -83,17 +83,31 @@ function createsUser() {
  # Crea el usuario.
  useradd -m -c "Mapeador" -s /bin/bash "${MAPPER_USERNAME}"
  
+ # Asigna una contraseña.
+ echo "${MAPPER_USERNAME}:${MAPPER_PASSWORD}" | chpasswd
+
  # Copia la imagen del usuario.
  umask 033
  cp "images/Imagen-${MAPPER_USERNAME}-icon" \
    "/var/lib/AccountsService/icons/${MAPPER_USERNAME}"
- 
  # Copia la configuración para usar la imagen.
  cp "conf/${MAPPER_USERNAME}" \
    "/var/lib/AccountsService/users/${MAPPER_USERNAME}"
 
- # Asigna una contraseña.
- echo "${MAPPER_USERNAME}:${MAPPER_PASSWORD}" | chpasswd
+ cp "conf/Imagen-${MAPPER_USERNAME}-358.jpg" \
+   "~${MAPPER_USERNAME}/.face"
+
+ # Pone el fondo de pantalla.
+ cp 'images/fondo.png' "~${MAPPER_USERNAME}/Imágenes"
+ PATH_TO_WALLPAPER="~${MAPPER_USERNAME}/Imágenes"
+kwriteconfig5
+  --file "~${MAPPER_USERNAME}/.config/plasma-org.kde.plasma.desktop-appletsrc" \
+    --group 'Containments'                                       \
+      --group '1'                                                \
+        --group 'Wallpaper'                                      \
+          --group 'org.kde.image'                                \
+            --group 'General'                                    \
+              --key 'Image' "${PATH_TO_WALLPAPER}"
 }
 
 # MAIN.
