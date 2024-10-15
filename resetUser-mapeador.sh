@@ -117,7 +117,7 @@ function createsUser() {
 function createScript() {
 
  cp 'images/fondo.png' "/home/${MAPPER_USERNAME}/Imágenes"
- mkdir "${AUTOSTART_DIR}"
+ mkdir -p "${AUTOSTART_DIR}"
  chown "${MAPPER_USERNAME}" "${AUTOSTART_DIR}"
  chmod 755 "${AUTOSTART_DIR}"
 
