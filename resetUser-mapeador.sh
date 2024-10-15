@@ -66,7 +66,9 @@ function checkEnv() {
 # Mata todos los procesos que se estén ejecutando con el usuario.
 function killUser() {
  MAPEADOR_ID=$(id -u "${MAPPER_USERNAME}")
+ set +e
  pkill -u "${MAPEADOR_ID}"
+ set -e
 }
 
 # Borra el usuario completamente, incluyendo home y cualquier otra
