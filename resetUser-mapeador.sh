@@ -100,7 +100,7 @@ function createsUser() {
  # Pone el fondo de pantalla.
  cp 'images/fondo.png' "/home/${MAPPER_USERNAME}/Imágenes"
  PATH_TO_WALLPAPER="/home/${MAPPER_USERNAME}/Imágenes"
-kwriteconfig5
+kwriteconfig5 \
   --file "/home/${MAPPER_USERNAME}/.config/plasma-org.kde.plasma.desktop-appletsrc" \
     --group 'Containments'                                       \
       --group '1'                                                \
