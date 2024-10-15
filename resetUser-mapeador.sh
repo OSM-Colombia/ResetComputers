@@ -115,6 +115,7 @@ function createsUser() {
 # Crea un script para ser ejecutado por el usuario la primera vez que entra.
 function createScript() {
 
+ cp 'images/fondo.png' "/home/${MAPPER_USERNAME}/Imágenes"
  cat << EOF > "${MAPPER_SCRIPT}"
 #!/bin/bash
 
@@ -123,15 +124,14 @@ function createScript() {
 # Generado automáticamente.
 
 # Pone el fondo de pantalla.
-cp 'images/fondo.png' "/home/${MAPPER_USERNAME}/Imágenes"
 PATH_TO_WALLPAPER="/home/${MAPPER_USERNAME}/Imágenes"
 kwriteconfig5 \
-  --file "/home/${MAPPER_USERNAME}/.config/plasma-org.kde.plasma.desktop-appletsrc" \
-    --group 'Containments'                                       \
-      --group '1'                                                \
-        --group 'Wallpaper'                                      \
-          --group 'org.kde.image'                                \
-            --group 'General'                                    \
+  --file "/home/${MAPPER_USERNAME}/.config/plasma-org.kde.plasma.desktop-appletsrc" \\
+    --group 'Containments'                                                          \\
+      --group '1'                                                                   \\
+        --group 'Wallpaper'                                                         \\
+          --group 'org.kde.image'                                                   \\
+            --group 'General'                                                       \\
               --key 'Image' "\${PATH_TO_WALLPAPER}"
 sed -i '$ d' ~/.bashrc
 EOF
