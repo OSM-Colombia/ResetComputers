@@ -133,6 +133,7 @@ function createScript() {
 #
 # Generado automáticamente.
 
+sleep 15
 # Pone el fondo de pantalla.
 PATH_TO_WALLPAPER="/home/${MAPPER_USERNAME}/Imágenes/fondo.png"
 kwriteconfig5 \
@@ -143,6 +144,14 @@ kwriteconfig5 \
           --group 'org.kde.image'                                                   \\
             --group 'General'                                                       \\
               --key 'Image' "\${PATH_TO_WALLPAPER}"
+
+# Iniciar JOSM para que descargue Java y los plugins.
+ # Descarga josm.jnlp
+wget -P Descargas https://josm.openstreetmap.de/download/josm.jnlp
+# Inicia JOSM.
+javaws
+
+
 EOF
  chown "${MAPPER_USERNAME}"."${MAPPER_USERNAME}" "${MAPPER_SCRIPT}"
  chmod 755 "${MAPPER_SCRIPT}"
