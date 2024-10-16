@@ -118,12 +118,12 @@ function createScript() {
 
  mkdir "/home/${MAPPER_USERNAME}/Imágenes"
  cp 'images/fondo.png' "/home/${MAPPER_USERNAME}/Imágenes"
- chown "${MAPPER_USERNAME}"."${MAPPER_USERNAME}" "/home/${MAPPER_USERNAME}/Imágenes" "/home/${MAPPER_USERNAME}/Imágenes/fondo.png"
+ chown "${MAPPER_USERNAME}":"${MAPPER_USERNAME}" "/home/${MAPPER_USERNAME}/Imágenes" "/home/${MAPPER_USERNAME}/Imágenes/fondo.png"
  chmod 755 "/home/${MAPPER_USERNAME}/Imágenes"
  chmod 644 "/home/${MAPPER_USERNAME}/Imágenes/fondo.png"
 
  mkdir -p "${AUTOSTART_DIR}"
- chown "${MAPPER_USERNAME}"."${MAPPER_USERNAME}" /home/${MAPPER_USERNAME}/.config/ "${AUTOSTART_DIR}"
+ chown "${MAPPER_USERNAME}":"${MAPPER_USERNAME}" /home/${MAPPER_USERNAME}/.config/ "${AUTOSTART_DIR}"
  chmod 755 /home/${MAPPER_USERNAME}/.config/ "${AUTOSTART_DIR}"
 
  cat << EOF > "${MAPPER_SCRIPT}"
@@ -149,11 +149,11 @@ kwriteconfig5 \
  # Descarga josm.jnlp
 wget -P Descargas https://josm.openstreetmap.de/download/josm.jnlp
 # Inicia JOSM.
-javaws
+javaws Descargas/josm.jnlp
 
 
 EOF
- chown "${MAPPER_USERNAME}"."${MAPPER_USERNAME}" "${MAPPER_SCRIPT}"
+ chown "${MAPPER_USERNAME}":"${MAPPER_USERNAME}" "${MAPPER_SCRIPT}"
  chmod 755 "${MAPPER_SCRIPT}"
 }
 
@@ -179,18 +179,23 @@ done
 set -u
 
 # Chequeos iniciales
+echo "Chequeo del entorno..."
 checkEnv >> "${LOG}"
 
 # Matar procesos del usuario.
+echo "Matando procesos del usuario..."
 killUser >> "${LOG}"
 
 # Borra todo rastro del usuario.
+echo "Borrando usuario..."
 deletesUser >> "${LOG}"
 
 # Crea el usuario incluyendo todas las propiedades.
+echo "Creando usuario..."
 createsUser >> "${LOG}"
 
 # Crea script para correr después del login.
+echo "Haciendo ajustes en el nuevo usuario..."
 createScript >> "${LOG}"
 
 echo "Usuario 'mapeador' reseteado"
