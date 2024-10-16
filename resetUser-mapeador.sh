@@ -6,8 +6,8 @@
 # todo como se ha diseñado.
 #
 # Autor: Andrés Gómez - AngocA
-# Version: 2024-09-30
-declare -r VERSION="2024-09-30"
+# Version: 2024-10-16
+declare -r VERSION="2024-10-16"
 
 # Modificadores para hacer el script más robusto.
 set -u
@@ -33,19 +33,24 @@ declare -r MAPPER_PASSWORD="osm-2004"
 declare -r AUTOSTART_DIR="/home/${MAPPER_USERNAME}/.config/autostart"
 declare -r MAPPER_SCRIPT="${AUTOSTART_DIR}/runOnce.sh"
 
-declare -r LOG="output-$(date +%Y%m%d%H%M%S).log"
+declare EXECUTION_TIME
+EXECUTION_TIME=$(date +%Y%m%d%H%M%S)
+declare -r TEMP_DIR="${SCRIPT_BASE_DIRECTORY}/temp"
+declare LOG="${TEMP_DIR}/output-${EXECUTION_TIME}.log"
 
 # FUNCIONES.
 
+# Atrapa cualquier senal y muestra en que punto se genero.
 function trapErrorOn() {
  trap '{ printf "\nERROR: The script did not finish correctly. Line number: ${LINENO}.\n" ; exit ;}' \
    ERR
 }
 
+# Muestra la ayuda de como ejecutar este programa.
 function help() {
  cat <<EOT
-Este script permite resetear el usuario "mapeador" de manera que todo lo que se
-haya hecho o configurado en ese usuario se borra.
+Este script permite resetear el usuario "MAPPER_USERNAME" de manera que todo lo
+que se haya hecho o configurado en ese usuario se borra.
 Esto es muy práctico, ya que cuando acaba un taller los usuarios dejan cambios
 o contraseñas en el sistema, y el script borra todo eso, y prepara de nuevo el
 ambiente para su siguiente uso.
@@ -68,9 +73,9 @@ function checkEnv() {
 
 # Mata todos los procesos que se estén ejecutando con el usuario.
 function killUser() {
- MAPEADOR_ID=$(id -u "${MAPPER_USERNAME}")
+ MAPPER_ID=$(id -u "${MAPPER_USERNAME}")
  set +e
- pkill -u "${MAPEADOR_ID}"
+ pkill -u "${MAPPER_ID}"
  set -e
 }
 
@@ -79,17 +84,17 @@ function killUser() {
 function deletesUser() {
  # Verfica si el usuario está definido.
  set +e
- QTY=$(cat /etc/passwd | grep ${MAPPER_USERNAME} | wc -l)
+ QTY=$(grep -c "${MAPPER_USERNAME}" /etc/passwd)
  set -e
  if [[ "${QTY}" -ne 0 ]]; then
   # El usuario existe, por lo tanto lo borra.
-  userdel -f ${MAPPER_USERNAME}
+  userdel -f "${MAPPER_USERNAME}"
  fi
  
  # Verifica si el home directory existe.
  if [[ -d "/home/${MAPPER_USERNAME}" ]]; then
   # El directorio existe, por lo tanto se borra.
-  rm -Rf "/home/${MAPPER_USERNAME}"
+  rm -Rf "/home/${MAPPER_USERNAME:?}"
  fi
 }
 
@@ -115,23 +120,28 @@ function createsUser() {
 
 # Crea un script para ser ejecutado por el usuario la primera vez que entra.
 function createScript() {
-
  mkdir "/home/${MAPPER_USERNAME}/Imágenes"
  cp 'images/fondo.png' "/home/${MAPPER_USERNAME}/Imágenes"
  chown "${MAPPER_USERNAME}":"${MAPPER_USERNAME}" "/home/${MAPPER_USERNAME}/Imágenes" "/home/${MAPPER_USERNAME}/Imágenes/fondo.png"
  chmod 755 "/home/${MAPPER_USERNAME}/Imágenes"
  chmod 644 "/home/${MAPPER_USERNAME}/Imágenes/fondo.png"
 
+ # Crea los directorios de autostart para poner un script ahi para que se
+ # ejecute la primera vez que inicie sesion.
  mkdir -p "${AUTOSTART_DIR}"
- chown "${MAPPER_USERNAME}":"${MAPPER_USERNAME}" /home/${MAPPER_USERNAME}/.config/ "${AUTOSTART_DIR}"
- chmod 755 /home/${MAPPER_USERNAME}/.config/ "${AUTOSTART_DIR}"
+ chown "${MAPPER_USERNAME}":"${MAPPER_USERNAME}" "/home/${MAPPER_USERNAME}/.config/" "${AUTOSTART_DIR}"
+ chmod 755 "/home/${MAPPER_USERNAME}/.config/" "${AUTOSTART_DIR}"
 
+ # Crea un script bajo el usuario mapeador, para terminar de configurarlo
+ # cuando inicie sesion.
  cat << EOF > "${MAPPER_SCRIPT}"
 #!/bin/bash
 
 # Script para ejecutar una vez que termina de configurar el usuario.
 #
 # Generado automáticamente.
+
+echo "Iniciando script de configuration." > /home/${MAPPER_USERNAME}/output.txt
 
 sleep 15
 # Pone el fondo de pantalla.
@@ -146,56 +156,64 @@ kwriteconfig5 \
               --key 'Image' "\${PATH_TO_WALLPAPER}"
 
 # Iniciar JOSM para que descargue Java y los plugins.
- # Descarga josm.jnlp
 wget -P Descargas https://josm.openstreetmap.de/download/josm.jnlp
 # Inicia JOSM.
 javaws Descargas/josm.jnlp
 
-
+# Se auto borra.
+rm  "${MAPPER_SCRIPT}"
 EOF
  chown "${MAPPER_USERNAME}":"${MAPPER_USERNAME}" "${MAPPER_SCRIPT}"
  chmod 755 "${MAPPER_SCRIPT}"
 }
 
 # MAIN.
+mkdir "${SCRIPT_BASE_DIRECTORY}/temp"
+date +%Y%m%d%H%M%S >> "${LOG}" 2>&1
 
 # Activa la trampa que captura el error de ejecución.
 trapErrorOn
 
-declare -r TEMP=$(getopt --options h --longoptions help --name "${APPL_NAME}" \
+declare TEMP
+TEMP=$(getopt --options h --longoptions help --name "${APPL_NAME}" \
   -- "${@}")
 eval set -- "${TEMP}"
 set +u
 while true ; do
  case "${1}" in
- -h | --help )
-  help
-  exit ;;
- -- )
-  shift 1
-  break ;;
+  -h | --help )
+   help
+   exit ;;
+  -- )
+   shift 1
+   break ;;
+  * )
+   echo "ERROR."
+   break ;;
  esac
 done
 set -u
 
 # Chequeos iniciales
 echo "Chequeo del entorno..."
-checkEnv >> "${LOG}"
+checkEnv >> "${LOG}" 2>&1
 
 # Matar procesos del usuario.
 echo "Matando procesos del usuario..."
-killUser >> "${LOG}"
+killUser >> "${LOG}" 2>&1
 
 # Borra todo rastro del usuario.
 echo "Borrando usuario..."
-deletesUser >> "${LOG}"
+deletesUser >> "${LOG}" 2>&1
 
 # Crea el usuario incluyendo todas las propiedades.
 echo "Creando usuario..."
-createsUser >> "${LOG}"
+createsUser >> "${LOG}" 2>&1
 
 # Crea script para correr después del login.
 echo "Haciendo ajustes en el nuevo usuario..."
-createScript >> "${LOG}"
+createScript >> "${LOG}" 2>&1
 
-echo "Usuario 'mapeador' reseteado"
+echo "Usuario '${MAPPER_USERNAME}' reseteado"
+echo "Usuario '${MAPPER_USERNAME}' reseteado" >> "${LOG}" 2>&1
+date +%Y%m%d%H%M%S >> "${LOG}" 2>&1
