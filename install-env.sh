@@ -4,17 +4,23 @@
 #
 # Autor: Andres Gomez - AngocA
 
-# Instala librerias.
-apt-get install curl
-
 # Instala OpenWebStart
-curl -s https://api.github.com/repos/karakun/OpenWebStart/releases/latest \
-| grep "browser_download_url.*deb" \
-| cut -d : -f 2,3 \
-| tr -d \" \
-| wget -qi -
+wget $(wget -q -O - https://api.github.com/repos/karakun/OpenWebStart/releases/latest \
+  | jq -r '.assets[] | select(.name | contains ("deb")) | .browser_download_url')
 dpkg -i OpenWebStart_linux_*.deb
 
-# Descarga josm.jnlp
-
 # Cambiar imagen de usuario.
+umask 033
+ADMIN_USERNAME=administrador
+cp "images/Imagen-${ADMIN_USERNAME}-icon" \
+ "/var/lib/AccountsService/icons/${ADMIN_USERNAME}"
+# Copia la configuración para usar la imagen.
+cp "conf/${ADMIN_USERNAME}" \
+ "/var/lib/AccountsService/users/${ADMIN_USERNAME}"
+
+cp "images/Imagen-${ADMIN_USERNAME}-358.jpg" \
+ "/home/${ADMIN_USERNAME}/.face"
+
+ # Descarga josm.jnlp
+wget https://josm.openstreetmap.de/download/josm.jnlp
+
