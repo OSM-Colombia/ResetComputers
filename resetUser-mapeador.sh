@@ -197,11 +197,11 @@ EOF
 
 # Instala el certificado de JOSM para que no pregunte.
 function installCertif() {
- declare -l CERTIFDIR="/home/${MAPPER_USERNAME}/.config/icedtea-web/security/"
+ declare -l CERTIFDIR="/home/${MAPPER_USERNAME}/.config/icedtea-web/security"
  umask 022
  mkdir -p "${CERTIFDIR}"
  cp certif/trusted.certs "${CERTIFDIR}"
- DEPLOYMENT_PROPS=".config/icedtea-web/deployment.properties"
+ DEPLOYMENT_PROPS="/home/${MAPPER_USERNAME}/.config/icedtea-web/deployment.properties"
  echo "deployment.javaws.shortcut=ALWAYS" >> "${DEPLOYMENT_PROPS}"
  chown "${MAPPER_USERNAME}":"${MAPPER_USERNAME}" \
    "/home/${MAPPER_USERNAME}/.config/icedtea-web" "${CERTIFDIR}" \
