@@ -123,14 +123,17 @@ function createsUser() {
 function createScript() {
  mkdir "/home/${MAPPER_USERNAME}/Imágenes"
  cp 'images/fondo.png' "/home/${MAPPER_USERNAME}/Imágenes"
- chown "${MAPPER_USERNAME}":"${MAPPER_USERNAME}" "/home/${MAPPER_USERNAME}/Imágenes" "/home/${MAPPER_USERNAME}/Imágenes/fondo.png"
+ chown "${MAPPER_USERNAME}":"${MAPPER_USERNAME}" \
+   "/home/${MAPPER_USERNAME}/Imágenes" \
+   "/home/${MAPPER_USERNAME}/Imágenes/fondo.png"
  chmod 755 "/home/${MAPPER_USERNAME}/Imágenes"
  chmod 644 "/home/${MAPPER_USERNAME}/Imágenes/fondo.png"
 
  # Crea los directorios de autostart para poner un script ahi para que se
  # ejecute la primera vez que inicie sesion.
  mkdir -p "${AUTOSTART_DIR}"
- chown "${MAPPER_USERNAME}":"${MAPPER_USERNAME}" "/home/${MAPPER_USERNAME}/.config/" "${AUTOSTART_DIR}"
+ chown "${MAPPER_USERNAME}":"${MAPPER_USERNAME}" \
+   "/home/${MAPPER_USERNAME}/.config/" "${AUTOSTART_DIR}"
  chmod 755 "/home/${MAPPER_USERNAME}/.config/" "${AUTOSTART_DIR}"
 
  # Crea un script bajo el usuario mapeador, para terminar de configurarlo
@@ -147,31 +150,34 @@ echo "Iniciando script de configuration." > /home/${MAPPER_USERNAME}/output.txt
 sleep 15
 # Pone el fondo de pantalla.
 PATH_TO_WALLPAPER="/home/${MAPPER_USERNAME}/Imágenes/fondo.png"
-kwriteconfig5 \
-  --file "/home/${MAPPER_USERNAME}/.config/plasma-org.kde.plasma.desktop-appletsrc" \\
-    --group 'Containments'                                                          \\
-      --group '1'                                                                   \\
-        --group 'Wallpaper'                                                         \\
-          --group 'org.kde.image'                                                   \\
-            --group 'General'                                                       \\
+kwriteconfig5 \\
+  --file \\
+  "/home/${MAPPER_USERNAME}/.config/plasma-org.kde.plasma.desktop-appletsrc" \\
+    --group 'Containments'                                                   \\
+      --group '1'                                                            \\
+        --group 'Wallpaper'                                                  \\
+          --group 'org.kde.image'                                            \\
+            --group 'General'                                                \\
               --key 'Image' "\${PATH_TO_WALLPAPER}"
 
-kwriteconfig5 \
-  --file "/home/${MAPPER_USERNAME}/.config/plasma-org.kde.plasma.desktop-appletsrc" \\
-    --group 'Containments'                                                          \\
-      --group '1'                                                                   \\
-        --group 'Wallpaper'                                                         \\
-          --group 'org.kde.image'                                                   \\
-            --group 'General'                                                       \\
+kwriteconfig5 \\
+  --file
+  "/home/${MAPPER_USERNAME}/.config/plasma-org.kde.plasma.desktop-appletsrc" \\
+    --group 'Containments'                                                   \\
+      --group '1'                                                            \\
+        --group 'Wallpaper'                                                  \\
+          --group 'org.kde.image'                                            \\
+            --group 'General'                                                \\
               --key 'FillMode' 6
 
-kwriteconfig5 \
-  --file "/home/${MAPPER_USERNAME}/.config/plasma-org.kde.plasma.desktop-appletsrc" \\
-    --group 'Containments'                                                          \\
-      --group '1'                                                                   \\
-        --group 'Wallpaper'                                                         \\
-          --group 'org.kde.image'                                                   \\
-            --group 'General'                                                       \\
+kwriteconfig5 \\
+  --file                                                                     \\
+  "/home/${MAPPER_USERNAME}/.config/plasma-org.kde.plasma.desktop-appletsrc" \\
+    --group 'Containments'                                                   \\
+      --group '1'                                                            \\
+        --group 'Wallpaper'                                                  \\
+          --group 'org.kde.image'                                            \\
+            --group 'General'                                                \\
               --key 'SlidePaths' '/usr/share/wallpapers/'
 
 # Iniciar JOSM para que descargue Java y los plugins.
@@ -183,7 +189,8 @@ javaws Descargas/josm.jnlp
 rm  "${TARGET_AUTOSTART_SCRIPT}"
 EOF
  cp "conf/runOnce.sh.desktop" "${TARGET_AUTOSTART_SCRIPT}"
- chown "${MAPPER_USERNAME}":"${MAPPER_USERNAME}" "${MAPPER_SCRIPT}" "${TARGET_AUTOSTART_SCRIPT}"
+ chown "${MAPPER_USERNAME}":"${MAPPER_USERNAME}" "${MAPPER_SCRIPT}" \
+   "${TARGET_AUTOSTART_SCRIPT}"
  chmod 755 "${MAPPER_SCRIPT}"
  chmod 600 "${TARGET_AUTOSTART_SCRIPT}"
 }
@@ -194,7 +201,9 @@ function installCertif() {
  umask 022
  mkdir -p "${CERTIFDIR}"
  cp certif/trusted.certs "${CERTIFDIR}"
- chown "${MAPPER_USERNAME}":"${MAPPER_USERNAME}" "/home/${MAPPER_USERNAME}/.config/icedtea-web" "${CERTIFDIR}"
+ chown "${MAPPER_USERNAME}":"${MAPPER_USERNAME}" \
+   "/home/${MAPPER_USERNAME}/.config/icedtea-web" "${CERTIFDIR}" \
+   "${CERTIFDIR}"/trusted.certs
 
 }
 
