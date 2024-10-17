@@ -31,7 +31,8 @@ declare -r MAPPER_USERNAME="mapeador"
 declare -r MAPPER_PASSWORD="osm-2004"
 
 declare -r AUTOSTART_DIR="/home/${MAPPER_USERNAME}/.config/autostart"
-declare -r MAPPER_SCRIPT="${AUTOSTART_DIR}/runOnce.sh"
+declare -r MAPPER_SCRIPT="/home/${MAPPER_USERNAME}/runOnce.sh"
+declare -r TARGET_AUTOSTART_SCRIPT="/home/${MAPPER_USERNAME}/.config/autostart/runOnce.sh"
 
 declare EXECUTION_TIME
 EXECUTION_TIME=$(date +%Y%m%d%H%M%S)
@@ -155,21 +156,52 @@ kwriteconfig5 \
             --group 'General'                                                       \\
               --key 'Image' "\${PATH_TO_WALLPAPER}"
 
+kwriteconfig5 \
+  --file "/home/${MAPPER_USERNAME}/.config/plasma-org.kde.plasma.desktop-appletsrc" \\
+    --group 'Containments'                                                          \\
+      --group '1'                                                                   \\
+        --group 'Wallpaper'                                                         \\
+          --group 'org.kde.image'                                                   \\
+            --group 'General'                                                       \\
+              --key 'FillMode' 6
+
+kwriteconfig5 \
+  --file "/home/${MAPPER_USERNAME}/.config/plasma-org.kde.plasma.desktop-appletsrc" \\
+    --group 'Containments'                                                          \\
+      --group '1'                                                                   \\
+        --group 'Wallpaper'                                                         \\
+          --group 'org.kde.image'                                                   \\
+            --group 'General'                                                       \\
+              --key 'SlidePaths' '/usr/share/wallpapers/'
+
 # Iniciar JOSM para que descargue Java y los plugins.
 wget -P Descargas https://josm.openstreetmap.de/download/josm.jnlp
 # Inicia JOSM.
 javaws Descargas/josm.jnlp
 
 # Se auto borra.
-rm  "${MAPPER_SCRIPT}"
+rm  "${TARGET_AUTOSTART_SCRIPT}"
 EOF
- chown "${MAPPER_USERNAME}":"${MAPPER_USERNAME}" "${MAPPER_SCRIPT}"
+ cp "conf/runOnce.sh.desktop" "${TARGET_AUTOSTART_SCRIPT}"
+ chown "${MAPPER_USERNAME}":"${MAPPER_USERNAME}" "${MAPPER_SCRIPT}" "${TARGET_AUTOSTART_SCRIPT}"
  chmod 755 "${MAPPER_SCRIPT}"
+ chmod 600 "${TARGET_AUTOSTART_SCRIPT}"
+}
+
+# Instala el certificado de JOSM para que no pregunte.
+function installCertif() {
+ declare -l CERTIFDIR="/home/${MAPPER_USERNAME}/.config/icedtea-web/security/"
+ umask 022
+ mkdir -p "${CERTIFDIR}"
+ cp certif/trusted.certs "${CERTIFDIR}"
+ chown "${MAPPER_USERNAME}":"${MAPPER_USERNAME}" "/home/${MAPPER_USERNAME}/.config/icedtea-web" "${CERTIFDIR}"
+
 }
 
 # MAIN.
-mkdir "${SCRIPT_BASE_DIRECTORY}/temp"
-date +%Y%m%d%H%M%S >> "${LOG}" 2>&1
+mkdir -p "${SCRIPT_BASE_DIRECTORY}/temp"
+echo "=====" >> "${LOG}" 2>&1
+date +%Y%m%d-%H%M%S >> "${LOG}" 2>&1
 
 # Activa la trampa que captura el error de ejecución.
 trapErrorOn
@@ -214,6 +246,10 @@ createsUser >> "${LOG}" 2>&1
 echo "Haciendo ajustes en el nuevo usuario..."
 createScript >> "${LOG}" 2>&1
 
+# Instala el certificado de JOSM.
+echo "Instalando certificado"
+installCertif >> "${LOG}" 2>&1
+
 echo "Usuario '${MAPPER_USERNAME}' reseteado"
 echo "Usuario '${MAPPER_USERNAME}' reseteado" >> "${LOG}" 2>&1
-date +%Y%m%d%H%M%S >> "${LOG}" 2>&1
+date +%Y%m%d-%H%M%S >> "${LOG}" 2>&1
