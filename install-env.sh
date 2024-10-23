@@ -1,4 +1,4 @@
-#!/bin/bash
+ #!/bin/bash
 
 # Prepara el ambiente para que todo se pueda configurar.
 # Se debe ejecutar con root.
@@ -73,7 +73,14 @@ function installODM() {
 
  git clone https://github.com/OpenDroneMap/WebODM --config core.autocrlf=input --depth 1
  cd WebODM
- nohup ./webodm.sh start &
+ ./webodm.sh start
+}
+
+# Configura el crontab.
+function configureCrontab() {
+ if [ "$(crontab -l | grep webodm | wc -l)" -eq 0 ]; then
+  crontab -l | { cat; echo "@reboot cd /home/administrador/Documentos/WebODM ; nohup ./webodm.sh start & "; } | crontab -
+ fi
 }
 
 # MAIN.
@@ -92,3 +99,6 @@ installJosm
 
 # Instala OpenDroneMap.
 installODM
+
+# Configura el crontab al inicio.
+configureCrontab
