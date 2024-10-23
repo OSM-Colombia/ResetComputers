@@ -73,7 +73,7 @@ function installODM() {
 
  git clone https://github.com/OpenDroneMap/WebODM --config core.autocrlf=input --depth 1
  cd WebODM
- ./webodm.sh start
+ nohup ./webodm.sh start &
 }
 
 # MAIN.
