@@ -6,8 +6,8 @@
 # todo como se ha diseñado.
 #
 # Autor: Andrés Gómez - AngocA
-# Version: 2024-10-16
-declare -r VERSION="2024-10-16"
+# Version: 2024-10-23
+declare -r VERSION="2024-10-23"
 
 # Modificadores para hacer el script más robusto.
 set -u
@@ -208,6 +208,11 @@ function installCertif() {
    "${CERTIFDIR}"/trusted.certs "${DEPLOYMENT_PROPS}"
 }
 
+# Instala Mapillary
+function installMapillary() {
+ wget -P Descargas https://tools.mapillary.com/uploader/download/linux
+}
+
 # MAIN.
 mkdir -p "${SCRIPT_BASE_DIRECTORY}/temp"
 echo "=====" >> "${LOG}" 2>&1
@@ -259,6 +264,10 @@ createScript >> "${LOG}" 2>&1
 # Instala el certificado de JOSM.
 echo "Instalando certificado"
 installCertif >> "${LOG}" 2>&1
+
+# Instala Mapillary
+echo "Instalando Mapillary"
+installMapillary >> "${LOG}" 2>&1
 
 echo "Usuario '${MAPPER_USERNAME}' reseteado"
 echo "Usuario '${MAPPER_USERNAME}' reseteado" >> "${LOG}" 2>&1
