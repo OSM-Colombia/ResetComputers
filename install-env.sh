@@ -64,6 +64,18 @@ function installJosm() {
  wget https://josm.openstreetmap.de/download/josm.jnlp
 }
 
+# Instala OpenDroneMap.
+function installODM() {
+ apt install -y python3
+ apt install -y python3-pip
+ apt install -y docker
+ apt install -y docker-compose
+
+ git clone https://github.com/OpenDroneMap/WebODM --config core.autocrlf=input --depth 1
+ cd WebODM
+ ./webodm.sh start
+}
+
 # MAIN.
 
 # Activa la trampa que captura el error de ejecución.
@@ -78,3 +90,5 @@ customizeAdmin
 # Instala JOSM.
 installJosm
 
+# Instala OpenDroneMap.
+installODM
