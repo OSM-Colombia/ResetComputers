@@ -76,6 +76,20 @@ function installODM() {
  ./webodm.sh start
 }
 
+# Instala otras herramientas posiblemente necesarias.
+function installTools() {
+ # Instala Gimp.
+ apt install -y gimp
+ apt install -y gimp-help-es
+ apt install -y gimp-plugin-registry
+
+ # Instala Inskcape.
+ apt-get install -y inkscape
+
+ # Instala QGIS.
+ apt install qgis
+}
+
 # Configura el crontab.
 function configureCrontab() {
  if [ "$(crontab -l | grep webodm | wc -l)" -eq 0 ]; then
@@ -99,6 +113,9 @@ installJosm
 
 # Instala OpenDroneMap.
 installODM
+
+# Instala otras herramientas.
+installTools
 
 # Configura el crontab al inicio.
 configureCrontab
