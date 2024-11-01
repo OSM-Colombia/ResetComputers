@@ -1,9 +1,14 @@
- #!/bin/bash
+#!/bin/bash
 
 # Prepara el ambiente para que todo se pueda configurar.
 # Se debe ejecutar con root.
 #
 # Autor: Andres Gomez - AngocA
+# Version: 2024-10-31
+declare -r VERSION="2024-10-31"
+
+# Código de error cuando el script no se ejecuta como root.
+declare -r EXIT_ERROR_NON_ROOT=254
 
 # FUNCIONES.
 
@@ -56,24 +61,12 @@ function customizeAdmin() {
 # Instala JOSM.
 function installJosm() {
  # Instala OpenWebStart
- wget $(wget -q -O - https://api.github.com/repos/karakun/OpenWebStart/releases/latest \
-   | jq -r '.assets[] | select(.name | contains ("deb")) | .browser_download_url')
+ wget "$(wget -q -O - https://api.github.com/repos/karakun/OpenWebStart/releases/latest \
+   | jq -r '.assets[] | select(.name | contains ("deb")) | .browser_download_url')"
  dpkg -i OpenWebStart_linux_*.deb
 
  # Descarga josm.jnlp
  wget https://josm.openstreetmap.de/download/josm.jnlp
-}
-
-# Instala OpenDroneMap.
-function installODM() {
- apt install -y python3
- apt install -y python3-pip
- apt install -y docker
- apt install -y docker-compose
-
- git clone https://github.com/OpenDroneMap/WebODM --config core.autocrlf=input --depth 1
- cd WebODM
- ./webodm.sh start
 }
 
 # Instala otras herramientas posiblemente necesarias.
@@ -88,6 +81,18 @@ function installTools() {
 
  # Instala QGIS.
  apt install qgis
+}
+
+# Instala OpenDroneMap.
+function installODM() {
+ apt install -y python3
+ apt install -y python3-pip
+ apt install -y docker
+ apt install -y docker-compose
+
+ git clone https://github.com/OpenDroneMap/WebODM --config core.autocrlf=input --depth 1
+ cd WebODM || exit 1
+ nohup ./webodm.sh start &
 }
 
 # Configura el crontab.
@@ -111,11 +116,11 @@ customizeAdmin
 # Instala JOSM.
 installJosm
 
-# Instala OpenDroneMap.
-installODM
-
 # Instala otras herramientas.
 installTools
+
+# Instala OpenDroneMap.
+installODM
 
 # Configura el crontab al inicio.
 configureCrontab
