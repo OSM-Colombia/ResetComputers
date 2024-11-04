@@ -90,6 +90,8 @@ function installODM() {
  apt install -y docker
  apt install -y docker-compose
 
+ cd
+
  git clone https://github.com/OpenDroneMap/WebODM --config core.autocrlf=input --depth 1
  cd WebODM || exit 1
  nohup ./webodm.sh start &
@@ -98,7 +100,7 @@ function installODM() {
 # Configura el crontab.
 function configureCrontab() {
  if [ "$(crontab -l | grep webodm | wc -l)" -eq 0 ]; then
-  crontab -l | { cat; echo "@reboot cd /home/administrador/Documentos/WebODM ; nohup ./webodm.sh start & "; } | crontab -
+  crontab -l | { cat; echo "@reboot cd /root/WebODM ; nohup ./webodm.sh start & "; } | crontab -
  fi
 }
 
