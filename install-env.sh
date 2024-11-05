@@ -71,6 +71,9 @@ function installJosm() {
 
 # Instala otras herramientas posiblemente necesarias.
 function installTools() {
+ # Instala Mapillary
+ wget -P Descargas https://tools.mapillary.com/uploader/download/linux
+
  # Instala Gimp.
  apt install -y gimp
  apt install -y gimp-help-es
