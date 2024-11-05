@@ -74,9 +74,11 @@ function checkEnv() {
 
 # Mata todos los procesos que se estén ejecutando con el usuario.
 function killUser() {
- MAPPER_ID=$(id -u "${MAPPER_USERNAME}")
  set +e
- pkill -u "${MAPPER_ID}"
+ MAPPER_ID=$(id -u "${MAPPER_USERNAME}")
+ if [[ -n "${MAPPER_ID}" ]]; then
+  pkill -u "${MAPPER_ID}"
+ fi
  set -e
 }
 
