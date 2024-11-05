@@ -6,8 +6,8 @@
 # todo como se ha diseñado.
 #
 # Autor: Andrés Gómez - AngocA
-# Version: 2024-10-23
-declare -r VERSION="2024-10-23"
+# Version: 2024-11-04
+declare -r VERSION="2024-11-04"
 
 # Modificadores para hacer el script más robusto.
 set -u

@@ -4,8 +4,8 @@
 # Se debe ejecutar con root.
 #
 # Autor: Andres Gomez - AngocA
-# Version: 2024-10-31
-declare -r VERSION="2024-10-31"
+# Version: 2024-11-04
+declare -r VERSION="2024-11-04"
 
 # Código de error cuando el script no se ejecuta como root.
 declare -r EXIT_ERROR_NON_ROOT=254
@@ -72,10 +72,11 @@ function installJosm() {
 # Instala otras herramientas posiblemente necesarias.
 function installTools() {
  # Instala Mapillary
- cd ../Descargas
+ cd ../../Descargas
  wget -U Mozilla https://tools.mapillary.com/uploader/download/linux
  mv linux Mapillary
  chmod +x Mapillary
+ cd
 
  # Instala Gimp.
  apt install -y gimp
@@ -98,8 +99,11 @@ function installODM() {
 
  cd
 
+ set +e
  git clone https://github.com/OpenDroneMap/WebODM --config core.autocrlf=input --depth 1
+ set -e
  cd WebODM || exit 1
+ git pull
  nohup ./webodm.sh start &
 }
 
