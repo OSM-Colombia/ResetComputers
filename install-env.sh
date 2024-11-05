@@ -64,8 +64,10 @@ function installJosm() {
  wget "$(wget -q -O - https://api.github.com/repos/karakun/OpenWebStart/releases/latest \
    | jq -r '.assets[] | select(.name | contains ("deb")) | .browser_download_url')"
  dpkg -i OpenWebStart_linux_*.deb
+ rm OpenWebStart_linux_*.deb
 
  # Descarga josm.jnlp
+ rm -f josm.jnlp
  wget https://josm.openstreetmap.de/download/josm.jnlp
 }
 
