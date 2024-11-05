@@ -67,8 +67,10 @@ function installJosm() {
  rm OpenWebStart_linux_*.deb
 
  # Descarga josm.jnlp
+ cd ../../Descargas
  rm -f josm.jnlp
  wget https://josm.openstreetmap.de/download/josm.jnlp
+ cd -
 }
 
 # Instala otras herramientas posiblemente necesarias.
