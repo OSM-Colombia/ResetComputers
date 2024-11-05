@@ -218,6 +218,10 @@ function installCertif() {
 }
 
 # MAIN.
+# Chequeos iniciales
+echo "Chequeo del entorno..."
+checkEnv >> "${LOG}" 2>&1
+
 mkdir -p "${SCRIPT_BASE_DIRECTORY}/temp"
 echo "=====" >> "${LOG}" 2>&1
 date +%Y%m%d-%H%M%S >> "${LOG}" 2>&1
@@ -244,10 +248,6 @@ while true ; do
  esac
 done
 set -u
-
-# Chequeos iniciales
-echo "Chequeo del entorno..."
-checkEnv >> "${LOG}" 2>&1
 
 # Matar procesos del usuario.
 echo "Matando procesos del usuario..."
