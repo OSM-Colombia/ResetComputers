@@ -220,7 +220,7 @@ function installCertif() {
 # MAIN.
 # Chequeos iniciales
 echo "Chequeo del entorno..."
-checkEnv >> "${LOG}" 2>&1
+checkEnv
 
 mkdir -p "${SCRIPT_BASE_DIRECTORY}/temp"
 echo "=====" >> "${LOG}" 2>&1
