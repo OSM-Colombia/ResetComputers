@@ -80,7 +80,7 @@ function installTools() {
  apt-get install -y inkscape
 
  # Instala QGIS.
- apt install qgis
+ apt install -y qgis
 }
 
 # Instala OpenDroneMap.
