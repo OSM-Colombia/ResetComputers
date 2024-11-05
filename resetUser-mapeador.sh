@@ -190,7 +190,7 @@ wget -P Escritorio https://tools.mapillary.com/uploader/download/linux >> "${LOG
 # Iniciar JOSM para que descargue Java y los plugins.
 wget -P Descargas https://josm.openstreetmap.de/download/josm.jnlp >> "${LOG_AUTO}"
 # Inicia JOSM.
-javaws Descargas/josm.jnlp >> "${LOG_AUTO}"
+nohup javaws Descargas/josm.jnlp & >> "${LOG_AUTO}"
 
 # Borra la auto ejecución de la primera vez.
 rm  -v "${TARGET_AUTOSTART_SCRIPT}" >> "${LOG_AUTO}"
