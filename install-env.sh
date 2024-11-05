@@ -75,6 +75,7 @@ function installJosm() {
 function installTools() {
  # Instala Mapillary
  cd ../../Descargas
+ rm -f Mapillary
  wget -U Mozilla https://tools.mapillary.com/uploader/download/linux
  mv linux Mapillary
  chmod +x Mapillary
