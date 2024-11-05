@@ -185,7 +185,9 @@ kwriteconfig5 \\
               --key 'SlidePaths' '/usr/share/wallpapers/' >> "${LOG_AUTO}"
 
 # Descarga Mapillary.
-wget -P Escritorio https://tools.mapillary.com/uploader/download/linux >> "${LOG_AUTO}"
+wget -P Escritorio -U Mozilla https://tools.mapillary.com/uploader/download/linux >> "${LOG_AUTO}"
+mv Escritorio/linux Escritorio/Mapillary
+chmod +x Escritorio/Mapillary
 
 # Iniciar JOSM para que descargue Java y los plugins.
 wget -P Descargas https://josm.openstreetmap.de/download/josm.jnlp >> "${LOG_AUTO}"

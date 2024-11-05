@@ -73,7 +73,9 @@ function installJosm() {
 function installTools() {
  # Instala Mapillary
  cd ../Descargas
- wget https://tools.mapillary.com/uploader/download/linux
+ wget -U Mozilla https://tools.mapillary.com/uploader/download/linux
+ mv linux Mapillary
+ chmod +x Mapillary
 
  # Instala Gimp.
  apt install -y gimp
