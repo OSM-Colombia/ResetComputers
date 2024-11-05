@@ -149,7 +149,7 @@ function createScript() {
 
 LOG_AUTO="/home/${MAPPER_USERNAME}/output.txt"
 
-echo "Iniciando script de configuration." >> "${LOG_AUTO}"
+echo "Iniciando script de configuration." >> "\${LOG_AUTO}"
 
 sleep 15
 # Pone el fondo de pantalla.
@@ -162,7 +162,7 @@ kwriteconfig5 \\
         --group 'Wallpaper'                                                  \\
           --group 'org.kde.image'                                            \\
             --group 'General'                                                \\
-              --key 'Image' "\${PATH_TO_WALLPAPER}" >> "${LOG_AUTO}"
+              --key 'Image' "\${PATH_TO_WALLPAPER}" >> "\${LOG_AUTO}"
 
 kwriteconfig5 \\
   --file
@@ -172,7 +172,7 @@ kwriteconfig5 \\
         --group 'Wallpaper'                                                  \\
           --group 'org.kde.image'                                            \\
             --group 'General'                                                \\
-              --key 'FillMode' 6 >> "${LOG_AUTO}"
+              --key 'FillMode' 6 >> "\${LOG_AUTO}"
 
 kwriteconfig5 \\
   --file                                                                     \\
@@ -182,20 +182,20 @@ kwriteconfig5 \\
         --group 'Wallpaper'                                                  \\
           --group 'org.kde.image'                                            \\
             --group 'General'                                                \\
-              --key 'SlidePaths' '/usr/share/wallpapers/' >> "${LOG_AUTO}"
+              --key 'SlidePaths' '/usr/share/wallpapers/' >> "\${LOG_AUTO}"
 
 # Descarga Mapillary.
-wget -P Escritorio -U Mozilla https://tools.mapillary.com/uploader/download/linux >> "${LOG_AUTO}"
+wget -P Escritorio -U Mozilla https://tools.mapillary.com/uploader/download/linux >> "\${LOG_AUTO}"
 mv Escritorio/linux Escritorio/Mapillary
 chmod +x Escritorio/Mapillary
 
 # Iniciar JOSM para que descargue Java y los plugins.
-wget -P Descargas https://josm.openstreetmap.de/download/josm.jnlp >> "${LOG_AUTO}"
+wget -P Descargas https://josm.openstreetmap.de/download/josm.jnlp >> "\${LOG_AUTO}"
 # Inicia JOSM.
-nohup javaws Descargas/josm.jnlp & >> "${LOG_AUTO}"
+nohup javaws Descargas/josm.jnlp & >> "\${LOG_AUTO}"
 
 # Borra la auto ejecución de la primera vez.
-rm  -v "${TARGET_AUTOSTART_SCRIPT}" >> "${LOG_AUTO}"
+rm  -v "${TARGET_AUTOSTART_SCRIPT}" >> "\${LOG_AUTO}"
 EOF
  cp "conf/runOnce.sh.desktop" "${TARGET_AUTOSTART_SCRIPT}"
  chown "${MAPPER_USERNAME}":"${MAPPER_USERNAME}" "${MAPPER_SCRIPT}" \
