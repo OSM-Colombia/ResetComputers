@@ -7,24 +7,48 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# 📁 Rutas base relativas al script
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(dirname "$SCRIPT_DIR")"
-ISO_ORIGINAL="$ROOT/iso/debian-13.0.0-amd64-DVD-1.iso"
-EXTRACT_DIR="$ROOT/extract"
-CUSTOM_DIR="$ROOT/custom"
-PROJECT_DIR="$ROOT/project/ResetComputers"
-BUILD_DIR="$ROOT/build"
+# 📁 Rutas base en el home del usuario
+HOME_DIR="$HOME"
+DEBIAN_CUSTOM="$HOME_DIR/debian-custom"
+ISO_DIR="$DEBIAN_CUSTOM/iso"
+EXTRACT_DIR="$DEBIAN_CUSTOM/extract"
+CUSTOM_DIR="$DEBIAN_CUSTOM/custom"
+PROJECT_DIR="$DEBIAN_CUSTOM/project"
+BUILD_DIR="$DEBIAN_CUSTOM/build"
+SCRIPTS_DIR="$DEBIAN_CUSTOM/scripts"
 OUTPUT_ISO="$BUILD_DIR/debian-13-resetcomputers.iso"
 PRESEED_FILE="$CUSTOM_DIR/preseed.cfg"
 
+# 🏗️ Crear estructura de directorios si no existe
+echo "🏗️ Creando estructura de directorios..."
+mkdir -p "$ISO_DIR" "$EXTRACT_DIR" "$CUSTOM_DIR" "$PROJECT_DIR" "$BUILD_DIR" "$SCRIPTS_DIR"
+
+# 📁 Copiar script actual a scripts y archivos del proyecto a project
+echo "📁 Copiando archivos del proyecto..."
+cp -v "$0" "$SCRIPTS_DIR/"
+cp -rv "$(dirname "$0")"/* "$PROJECT_DIR/" 2>/dev/null || echo "⚠ No se pudieron copiar todos los archivos del proyecto"
+
+# 🔍 Buscar ISO de Debian en el directorio iso
+ISO_ORIGINAL=""
+for iso_file in "$ISO_DIR"/*.iso; do
+  if [[ -f "$iso_file" ]]; then
+    ISO_ORIGINAL="$iso_file"
+    break
+  fi
+done
+
 # 🔧 Variables dinámicas
-HOSTNAME="ac3-$(date +%d)"
 
 # 🧪 Validaciones previas
-[[ -f "$ISO_ORIGINAL" ]] || { echo "❌ ISO original no encontrada: $ISO_ORIGINAL"; exit 1; }
-[[ -d "$PROJECT_DIR" ]] || { echo "❌ Proyecto ResetComputers no encontrado: $PROJECT_DIR"; exit 1; }
-[[ -f "$PROJECT_DIR/install-env.sh" ]] || { echo "❌ Script install-env.sh no encontrado en ResetComputers"; exit 1; }
+if [[ -z "$ISO_ORIGINAL" ]]; then
+  echo "❌ No se encontró ninguna ISO de Debian en: $ISO_DIR"
+  echo "📥 Por favor, coloca una ISO de Debian en el directorio: $ISO_DIR"
+  exit 1
+fi
+echo "✅ ISO encontrada: $(basename "$ISO_ORIGINAL")"
+
+[[ -d "$PROJECT_DIR" ]] || { echo "❌ Directorio del proyecto no encontrado: $PROJECT_DIR"; exit 1; }
+[[ -f "$PROJECT_DIR/install-env.sh" ]] || { echo "❌ Script install-env.sh no encontrado en: $PROJECT_DIR"; exit 1; }
 [[ -x "$PROJECT_DIR/install-env.sh" ]] || chmod +x "$PROJECT_DIR/install-env.sh"
 
 # 🧹 Limpieza previa
@@ -36,9 +60,9 @@ mkdir -p "$EXTRACT_DIR"
 echo "📦 Extrayendo ISO original..."
 xorriso -osirrox on -indev "$ISO_ORIGINAL" -extract / "$EXTRACT_DIR"
 
-# 🛠 Copiar proyecto ResetComputers
-echo "🛠 Copiando proyecto ResetComputers..."
-cp -rv "$PROJECT_DIR" "$EXTRACT_DIR/" || echo "⚠ ResetComputers no encontrado, se omite"
+# 🛠 Copiar proyecto al directorio de extracción
+echo "🛠 Copiando proyecto al directorio de extracción..."
+cp -rv "$PROJECT_DIR" "$EXTRACT_DIR/" || echo "⚠ Proyecto no encontrado, se omite"
 
 # 🧾 Generar preseed.cfg completo
 echo "🧾 Generando preseed.cfg con configuración automatizada..."
@@ -46,9 +70,7 @@ mkdir -p "$CUSTOM_DIR"
 cat > "$PRESEED_FILE" <<EOF
 ### Localización
 d-i debian-installer/locale string es_CO.UTF-8
-d-i localechooser/language-name string Spanish
 d-i localechooser/language string es
-d-i localechooser/country-name string Colombia
 d-i localechooser/country string CO
 
 ### Teclado
@@ -61,8 +83,6 @@ d-i keyboard-configuration/xkb-keymap select latam
 d-i netcfg/enable boolean false
 d-i netcfg/disable_autoconfig boolean true
 d-i netcfg/choose_interface select auto
-d-i netcfg/get_hostname string $HOSTNAME
-d-i netcfg/get_domain string local
 
 ### Reloj
 d-i clock-setup/utc boolean true
@@ -71,12 +91,6 @@ d-i time/zone string America/Bogota
 ### Particionado automático (todo en /)
 d-i partman-auto/method string regular
 d-i partman-auto/choose_recipe select atomic
-d-i partman-auto/expert_recipe string \
-      atomic :: \
-        10000 10000 100000000 ext4 \
-        $primary{ } $bootable{ } method{ format } format{ } use_filesystem{ } filesystem{ ext4 } \
-        mountpoint{ / } .
-
 d-i partman-auto/init_automatically_partition select biggest_free
 d-i partman/confirm_write_new_label boolean true
 d-i partman/choose_partition select finish
@@ -92,12 +106,12 @@ d-i mirror/suite string stable
 
 ### Paquetes
 tasksel tasksel/first multiselect standard, kde-desktop, ssh-server
-popularity-contest popularity-contest/participate boolean false
+d-i pkgsel/include string openssh-server
 
 ### Finalización
 d-i finish-install/reboot_in_progress note
 d-i preseed/late_command string \
-    cp -r /cdrom/ResetComputers /target/opt/ && \
+    cp -r /cdrom/project /target/opt/ResetComputers && \
     chmod +x /target/opt/ResetComputers/install-env.sh && \
     chroot /target /opt/ResetComputers/install-env.sh
 EOF
@@ -168,4 +182,14 @@ else
 fi
 
 echo "✅ ISO personalizada generada en: $OUTPUT_ISO"
+echo ""
+echo "📁 Estructura de directorios creada en: $DEBIAN_CUSTOM"
+echo "   ├── iso/      - Coloca aquí las ISOs de Debian originales"
+echo "   ├── extract/  - Archivos extraídos de la ISO original"
+echo "   ├── custom/   - Archivos de configuración personalizados"
+echo "   ├── project/  - Archivos del proyecto ResetComputers"
+echo "   ├── build/    - ISO personalizada generada"
+echo "   └── scripts/  - Scripts de automatización"
+echo ""
+echo "🔄 Para generar otra ISO, simplemente ejecuta: $SCRIPTS_DIR/$(basename "$0")"
 
