@@ -7,9 +7,8 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# 📁 Rutas base en el home del usuario
-HOME_DIR="$HOME"
-DEBIAN_CUSTOM="$HOME_DIR/debian-custom"
+# 📁 Rutas base en directorio compartido
+DEBIAN_CUSTOM="/opt/debian-custom"
 ISO_DIR="$DEBIAN_CUSTOM/iso"
 EXTRACT_DIR="$DEBIAN_CUSTOM/extract"
 CUSTOM_DIR="$DEBIAN_CUSTOM/custom"
@@ -22,6 +21,11 @@ PRESEED_FILE="$CUSTOM_DIR/preseed.cfg"
 # 🏗️ Crear estructura de directorios si no existe
 echo "🏗️ Creando estructura de directorios..."
 mkdir -p "$ISO_DIR" "$EXTRACT_DIR" "$CUSTOM_DIR" "$PROJECT_DIR" "$BUILD_DIR" "$SCRIPTS_DIR"
+
+# 🔐 Configurar permisos para que otros usuarios puedan leer
+echo "🔐 Configurando permisos de directorios..."
+chmod 755 "$DEBIAN_CUSTOM"
+chmod 755 "$ISO_DIR" "$EXTRACT_DIR" "$CUSTOM_DIR" "$PROJECT_DIR" "$BUILD_DIR" "$SCRIPTS_DIR"
 
 # 📁 Copiar script actual a scripts y archivos del proyecto a project
 echo "📁 Copiando archivos del proyecto..."
@@ -67,6 +71,12 @@ cp -rv "$PROJECT_DIR" "$EXTRACT_DIR/" || echo "⚠ Proyecto no encontrado, se om
 # 🧾 Generar preseed.cfg completo
 echo "🧾 Generando preseed.cfg con configuración automatizada..."
 mkdir -p "$CUSTOM_DIR"
+
+# 🔐 Generar contraseña encriptada para root y usuario
+PASSWORD="OpenStreetMap2004"
+ENCRYPTED_PASSWORD=$(openssl passwd -6 -salt salt "$PASSWORD")
+echo "🔐 Contraseña generada: $PASSWORD (encriptada: $ENCRYPTED_PASSWORD)"
+
 cat > "$PRESEED_FILE" <<EOF
 ### Localización
 d-i debian-installer/locale string es_CO.UTF-8
@@ -78,6 +88,13 @@ d-i console-setup/ask_detect boolean false
 d-i keyboard-configuration/layoutcode string latam
 d-i keyboard-configuration/modelcode string pc105
 d-i keyboard-configuration/xkb-keymap select latam
+
+### Usuario y contraseña
+d-i passwd/root-password-crypted password $ENCRYPTED_PASSWORD
+d-i passwd/user-fullname string Usuario
+d-i passwd/username string usuario
+d-i passwd/user-password-crypted password $ENCRYPTED_PASSWORD
+d-i user-setup/allow-password-weak boolean true
 
 ### Red (sin conexión)
 d-i netcfg/enable boolean false
@@ -114,32 +131,83 @@ d-i preseed/late_command string \
     cp -r /cdrom/project /target/opt/ResetComputers && \
     chmod +x /target/opt/ResetComputers/install-env.sh && \
     chroot /target /opt/ResetComputers/install-env.sh
+
+### Opciones adicionales para instalación automática
+d-i debian-installer/allow_unauthenticated boolean true
+d-i pkgsel/update-policy select none
+d-i pkgsel/upgrade select full-upgrade
 EOF
 
 # 📥 Copiar preseed.cfg a la raíz de la ISO
+echo "📥 Copiando preseed.cfg a la raíz de la ISO..."
 cp -v "$PRESEED_FILE" "$EXTRACT_DIR/"
 
-# 🧠 Modificar grub.cfg (modo UEFI)
-GRUB_CFG="$EXTRACT_DIR/boot/grub/grub.cfg"
-if [[ -f "$GRUB_CFG" ]] && ! grep -q "Automated Install with ResetComputers" "$GRUB_CFG"; then
-  echo "🧠 Agregando entrada personalizada a grub.cfg..."
-  sed -i '/menuentry .*Install/ a\
-menuentry "Automated Install with ResetComputers (KDE + SSH)" {\n\
-    set background_color=black\n\
-    linux /install.amd/vmlinuz auto=true priority=critical preseed/file=/cdrom/preseed.cfg quiet\n\
-    initrd /install.amd/initrd.gz\n\
-}' "$GRUB_CFG"
+# Verificar que preseed.cfg se copió correctamente
+if [[ -f "$EXTRACT_DIR/preseed.cfg" ]]; then
+  echo "✅ preseed.cfg copiado correctamente a la raíz de la ISO"
+  echo "📄 Contenido del preseed.cfg:"
+  head -5 "$EXTRACT_DIR/preseed.cfg"
+else
+  echo "❌ Error: No se pudo copiar preseed.cfg"
+  exit 1
 fi
 
-# 🧠 Modificar txt.cfg (modo BIOS/legacy)
+# 🧠 Modificar archivos de arranque para instalación automática
+echo "🧠 Modificando archivos de arranque..."
+
+# Modificar grub.cfg (modo UEFI)
+GRUB_CFG="$EXTRACT_DIR/boot/grub/grub.cfg"
+if [[ -f "$GRUB_CFG" ]]; then
+  echo "🧠 Modificando grub.cfg para modo UEFI..."
+  # Crear backup
+  cp "$GRUB_CFG" "${GRUB_CFG}.backup"
+  
+  # Agregar nueva entrada al final del archivo
+  cat >> "$GRUB_CFG" << 'GRUB_EOF'
+
+menuentry "Automated Install with ResetComputers (KDE + SSH)" {
+    set background_color=black
+    linux /install.amd/vmlinuz auto=true priority=critical preseed/file=/cdrom/preseed.cfg quiet
+    initrd /install.amd/initrd.gz
+}
+GRUB_EOF
+  echo "✅ grub.cfg modificado correctamente"
+else
+  echo "⚠ grub.cfg no encontrado, omitiendo modificación UEFI"
+fi
+
+# Modificar txt.cfg (modo BIOS/legacy)
 TXT_CFG="$EXTRACT_DIR/isolinux/txt.cfg"
-if [[ -f "$TXT_CFG" ]] && ! grep -q "label auto" "$TXT_CFG"; then
-  echo "🧠 Agregando entrada personalizada a txt.cfg..."
-  sed -i '/label install/ a\
-label auto\n\
-  menu label ^Automated Install with ResetComputers (KDE + SSH)\n\
-  kernel /install.amd/vmlinuz\n\
-  append auto=true priority=critical preseed/file=/cdrom/preseed.cfg initrd=/install.amd/initrd.gz quiet' "$TXT_CFG"
+if [[ -f "$TXT_CFG" ]]; then
+  echo "🧠 Modificando txt.cfg para modo BIOS..."
+  # Crear backup
+  cp "$TXT_CFG" "${TXT_CFG}.backup"
+  
+  # Agregar nueva entrada al final del archivo
+  cat >> "$TXT_CFG" << 'TXT_EOF'
+
+label auto
+  menu label ^Automated Install with ResetComputers (KDE + SSH)
+  kernel /install.amd/vmlinuz
+  append auto=true priority=critical preseed/file=/cdrom/preseed.cfg initrd=/install.amd/initrd.gz quiet
+TXT_EOF
+  echo "✅ txt.cfg modificado correctamente"
+else
+  echo "⚠ txt.cfg no encontrado, omitiendo modificación BIOS"
+fi
+
+# Verificar que las modificaciones se aplicaron
+echo "🔍 Verificando modificaciones..."
+if grep -q "Automated Install with ResetComputers" "$GRUB_CFG" 2>/dev/null; then
+  echo "✅ Entrada UEFI agregada correctamente"
+else
+  echo "❌ Error: No se pudo agregar entrada UEFI"
+fi
+
+if grep -q "label auto" "$TXT_CFG" 2>/dev/null; then
+  echo "✅ Entrada BIOS agregada correctamente"
+else
+  echo "❌ Error: No se pudo agregar entrada BIOS"
 fi
 
 # 🔐 Asegurar permisos en el directorio de extracción
@@ -182,7 +250,27 @@ else
 fi
 
 echo "✅ ISO personalizada generada en: $OUTPUT_ISO"
+
+# 🔐 Asegurar que la ISO sea legible por otros usuarios
+chmod 644 "$OUTPUT_ISO"
+echo "🔐 Permisos de la ISO configurados para lectura pública"
+
+# 🔍 Verificación final de la ISO generada
+echo "🔍 Verificación final de la ISO..."
+if command -v xorriso >/dev/null 2>&1; then
+  echo "📋 Contenido de la ISO generada:"
+  xorriso -indev "$OUTPUT_ISO" -list 2>/dev/null | grep -E "(preseed\.cfg|grub\.cfg|txt\.cfg)" || echo "⚠ No se encontraron archivos críticos en la ISO"
+else
+  echo "⚠ xorriso no disponible para verificación"
+fi
+
 echo ""
+echo "🔐 INFORMACIÓN IMPORTANTE:"
+echo "   Usuario: usuario"
+echo "   Contraseña: $PASSWORD"
+echo "   Root password: $PASSWORD"
+echo ""
+
 echo "📁 Estructura de directorios creada en: $DEBIAN_CUSTOM"
 echo "   ├── iso/      - Coloca aquí las ISOs de Debian originales"
 echo "   ├── extract/  - Archivos extraídos de la ISO original"
