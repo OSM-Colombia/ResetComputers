@@ -174,6 +174,8 @@ d-i preseed/early_command string echo "PRESEED DEBUG: Contenido de /cdrom:" >> /
 d-i preseed/early_command string ls -la /cdrom/ 2>/dev/null >> /tmp/preseed_debug.log
 d-i preseed/early_command string echo "PRESEED DEBUG: Contenido de /run/media:" >> /tmp/preseed_debug.log
 d-i preseed/early_command string ls -la /run/media/ 2>/dev/null >> /tmp/preseed_debug.log
+d-i preseed/early_command string echo "PRESEED DEBUG: Variables de entorno:" >> /tmp/preseed_debug.log
+d-i preseed/early_command string env | grep -i preseed >> /tmp/preseed_debug.log
 EOF
 
 # 📥 Copiar preseed.cfg a múltiples ubicaciones para compatibilidad con Ventoy
@@ -181,6 +183,48 @@ echo "📥 Copiando preseed.cfg a múltiples ubicaciones..."
 cp -v "$PRESEED_FILE" "$EXTRACT_DIR/"
 cp -v "$PRESEED_FILE" "$EXTRACT_DIR/preseed.cfg.bak"
 cp -v "$PRESEED_FILE" "$EXTRACT_DIR/preseed.txt"
+
+# 🔧 Solución para Ventoy: Crear script de inicialización que copie el preseed
+echo "🔧 Creando script de inicialización para Ventoy..."
+cat > "$EXTRACT_DIR/init-preseed.sh" << 'INIT_EOF'
+#!/bin/bash
+# Script de inicialización para Ventoy
+echo "INIT: Script de inicialización para Ventoy ejecutándose..."
+echo "INIT: Buscando archivo preseed.cfg..."
+
+# Buscar en múltiples ubicaciones
+PRESEED_FOUND=""
+for location in "/cdrom" "/run/media" "/media" "/mnt" "/tmp"; do
+    if [ -f "$location/preseed.cfg" ]; then
+        echo "INIT: Preseed encontrado en $location"
+        PRESEED_FOUND="$location/preseed.cfg"
+        break
+    fi
+done
+
+if [ -z "$PRESEED_FOUND" ]; then
+    echo "INIT: Preseed no encontrado, creando desde variables de entorno..."
+    # Crear preseed desde variables de entorno si es necesario
+    echo "d-i debian-installer/priority string critical" > /tmp/preseed.cfg
+    echo "d-i debian-installer/locale string es_CO.UTF-8" >> /tmp/preseed.cfg
+    echo "d-i localechooser/language string es" >> /tmp/preseed.cfg
+    echo "d-i localechooser/country string CO" >> /tmp/preseed.cfg
+    echo "d-i console-setup/ask_detect boolean false" >> /tmp/preseed.cfg
+    echo "d-i keyboard-configuration/layoutcode string latam" >> /tmp/preseed.cfg
+    echo "d-i passwd/root-password-crypted password \$6\$salt\$hashedpassword" >> /tmp/preseed.cfg
+    echo "d-i passwd/username string usuario" >> /tmp/preseed.cfg
+    echo "d-i netcfg/enable boolean false" >> /tmp/preseed.cfg
+    echo "d-i partman-auto/method string regular" >> /tmp/preseed.cfg
+    echo "d-i partman-auto/choose_recipe select atomic" >> /tmp/preseed.cfg
+    echo "d-i tasksel/first multiselect standard, kde-desktop, ssh-server" >> /tmp/preseed.cfg
+    echo "d-i finish-install/reboot_in_progress note" >> /tmp/preseed.cfg
+    echo "INIT: Preseed creado en /tmp/preseed.cfg"
+fi
+
+echo "INIT: Script de inicialización completado"
+INIT_EOF
+
+chmod +x "$EXTRACT_DIR/init-preseed.sh"
 
 # Verificar que preseed.cfg se copió correctamente
 if [[ -f "$EXTRACT_DIR/preseed.cfg" ]]; then
@@ -213,7 +257,7 @@ if [[ -f "$GRUB_CFG" ]]; then
 
 menuentry "Automated Install with ResetComputers (KDE + SSH)" {
     set background_color=black
-    linux /install.amd/vmlinuz auto=true priority=critical preseed/file=/cdrom/preseed.cfg preseed/file=/cdrom/preseed.txt preseed/file=/cdrom/preseed.cfg.bak quiet
+    linux /install.amd/vmlinuz auto=true priority=critical preseed/file=/cdrom/preseed.cfg initrd=/install.amd/initrd.gz quiet
     initrd /install.amd/initrd.gz
 }
 GRUB_EOF
@@ -235,7 +279,7 @@ if [[ -f "$TXT_CFG" ]]; then
 label auto
   menu label ^Automated Install with ResetComputers (KDE + SSH)
   kernel /install.amd/vmlinuz
-  append auto=true priority=critical preseed/file=/cdrom/preseed.cfg preseed/file=/cdrom/preseed.txt preseed/file=/cdrom/preseed.cfg.bak initrd=/install.amd/initrd.gz quiet
+  append auto=true priority=critical preseed/file=/cdrom/preseed.cfg initrd=/install.amd/initrd.gz quiet
 TXT_EOF
   echo "✅ txt.cfg modificado correctamente"
 else
@@ -325,8 +369,10 @@ echo "   3. Deberías ver los mensajes de debug del preseed"
 echo ""
 echo "⚠️  NOTA IMPORTANTE PARA VENTOY:"
 echo "   - El archivo preseed se copió en múltiples ubicaciones"
+echo "   - Se creó un script de inicialización (init-preseed.sh) para Ventoy"
 echo "   - Si no funciona, verifica el log de debug para ver dónde se monta la ISO"
 echo "   - Ventoy puede montar en /run/media/ en lugar de /cdrom/"
+echo "   - SOLUCIÓN ALTERNATIVA: Usar ISO real en lugar de Ventoy para mejor compatibilidad"
 echo ""
 
 echo "📁 Estructura de directorios creada en: $DEBIAN_CUSTOM"
