@@ -15,7 +15,9 @@ CUSTOM_DIR="$DEBIAN_CUSTOM/custom"
 PROJECT_DIR="$DEBIAN_CUSTOM/project"
 BUILD_DIR="$DEBIAN_CUSTOM/build"
 SCRIPTS_DIR="$DEBIAN_CUSTOM/scripts"
-OUTPUT_ISO="$BUILD_DIR/debian-13-resetcomputers.iso"
+# Generar nombre único con timestamp
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+OUTPUT_ISO="$BUILD_DIR/debian-13-resetcomputers_${TIMESTAMP}.iso"
 PRESEED_FILE="$CUSTOM_DIR/preseed.cfg"
 
 # 🏗️ Crear estructura de directorios si no existe
@@ -78,16 +80,21 @@ ENCRYPTED_PASSWORD=$(openssl passwd -6 -salt salt "$PASSWORD")
 echo "🔐 Contraseña generada: $PASSWORD (encriptada: $ENCRYPTED_PASSWORD)"
 
 cat > "$PRESEED_FILE" <<EOF
+### Configuración crítica para instalación automática
+d-i debian-installer/priority string critical
+
 ### Localización
 d-i debian-installer/locale string es_CO.UTF-8
 d-i localechooser/language string es
 d-i localechooser/country string CO
+d-i localechooser/supported-locales multiselect es_CO.UTF-8
 
 ### Teclado
 d-i console-setup/ask_detect boolean false
 d-i keyboard-configuration/layoutcode string latam
 d-i keyboard-configuration/modelcode string pc105
 d-i keyboard-configuration/xkb-keymap select latam
+d-i keyboard-configuration/optionscode string
 
 ### Usuario y contraseña
 d-i passwd/root-password-crypted password $ENCRYPTED_PASSWORD
@@ -95,15 +102,26 @@ d-i passwd/user-fullname string Usuario
 d-i passwd/username string usuario
 d-i passwd/user-password-crypted password $ENCRYPTED_PASSWORD
 d-i user-setup/allow-password-weak boolean true
+d-i user-setup/encrypt-home boolean false
+d-i passwd/user-uid string 1000
+d-i passwd/user-gid string 1000
+d-i user-setup/encrypt-home boolean false
 
 ### Red (sin conexión)
 d-i netcfg/enable boolean false
 d-i netcfg/disable_autoconfig boolean true
 d-i netcfg/choose_interface select auto
+d-i netcfg/get_hostname string debian
+d-i netcfg/get_domain string local
+d-i netcfg/wireless_wep string
+d-i netcfg/wireless_essid string
+d-i netcfg/wireless_wpa string
 
 ### Reloj
 d-i clock-setup/utc boolean true
 d-i time/zone string America/Bogota
+d-i clock-setup/ntp boolean false
+d-i clock-setup/ntp-server string
 
 ### Particionado automático (todo en /)
 d-i partman-auto/method string regular
@@ -113,6 +131,7 @@ d-i partman/confirm_write_new_label boolean true
 d-i partman/choose_partition select finish
 d-i partman/confirm boolean true
 d-i partman/confirm_nooverwrite boolean true
+d-i partman-auto/expert_recipe string
 
 ### Repositorios (sin mirror)
 d-i apt-setup/use_mirror boolean false
@@ -120,10 +139,17 @@ d-i mirror/country string manual
 d-i mirror/http/hostname string
 d-i mirror/http/directory string
 d-i mirror/suite string stable
+d-i apt-setup/security_host string security.debian.org
+d-i apt-setup/security_path string /debian-security
 
 ### Paquetes
-tasksel tasksel/first multiselect standard, kde-desktop, ssh-server
 d-i pkgsel/include string openssh-server
+d-i pkgsel/install-recommends boolean true
+d-i pkgsel/update-policy select none
+d-i pkgsel/upgrade select full-upgrade
+
+### Tareas
+d-i tasksel/first multiselect standard, kde-desktop, ssh-server
 
 ### Finalización
 d-i finish-install/reboot_in_progress note
@@ -132,21 +158,41 @@ d-i preseed/late_command string \
     chmod +x /target/opt/ResetComputers/install-env.sh && \
     chroot /target /opt/ResetComputers/install-env.sh
 
-### Opciones adicionales para instalación automática
+### Opciones adicionales para evitar preguntas
 d-i debian-installer/allow_unauthenticated boolean true
-d-i pkgsel/update-policy select none
-d-i pkgsel/upgrade select full-upgrade
+d-i user-setup/allow-password-weak boolean true
+d-i passwd/user-uid string 1000
+d-i passwd/user-gid string 1000
+
+### Debug: Verificar que preseed se está aplicando
+d-i preseed/early_command string echo "PRESEED DEBUG: Archivo preseed.cfg cargado correctamente - $(date)" > /tmp/preseed_debug.log
+d-i preseed/early_command string echo "PRESEED DEBUG: Usuario: usuario, Contraseña: $PASSWORD" >> /tmp/preseed_debug.log
+d-i preseed/early_command string echo "PRESEED DEBUG: Timestamp ISO: $TIMESTAMP" >> /tmp/preseed_debug.log
+d-i preseed/early_command string echo "PRESEED DEBUG: Buscando archivo preseed.cfg..." >> /tmp/preseed_debug.log
+d-i preseed/early_command string find / -name "preseed.cfg" 2>/dev/null >> /tmp/preseed_debug.log
+d-i preseed/early_command string echo "PRESEED DEBUG: Contenido de /cdrom:" >> /tmp/preseed_debug.log
+d-i preseed/early_command string ls -la /cdrom/ 2>/dev/null >> /tmp/preseed_debug.log
+d-i preseed/early_command string echo "PRESEED DEBUG: Contenido de /run/media:" >> /tmp/preseed_debug.log
+d-i preseed/early_command string ls -la /run/media/ 2>/dev/null >> /tmp/preseed_debug.log
 EOF
 
-# 📥 Copiar preseed.cfg a la raíz de la ISO
-echo "📥 Copiando preseed.cfg a la raíz de la ISO..."
+# 📥 Copiar preseed.cfg a múltiples ubicaciones para compatibilidad con Ventoy
+echo "📥 Copiando preseed.cfg a múltiples ubicaciones..."
 cp -v "$PRESEED_FILE" "$EXTRACT_DIR/"
+cp -v "$PRESEED_FILE" "$EXTRACT_DIR/preseed.cfg.bak"
+cp -v "$PRESEED_FILE" "$EXTRACT_DIR/preseed.txt"
 
 # Verificar que preseed.cfg se copió correctamente
 if [[ -f "$EXTRACT_DIR/preseed.cfg" ]]; then
   echo "✅ preseed.cfg copiado correctamente a la raíz de la ISO"
   echo "📄 Contenido del preseed.cfg:"
-  head -5 "$EXTRACT_DIR/preseed.cfg"
+  head -10 "$EXTRACT_DIR/preseed.cfg"
+  echo "..."
+  echo "📄 Últimas líneas del preseed.cfg:"
+  tail -5 "$EXTRACT_DIR/preseed.cfg"
+  echo ""
+  echo "📁 Archivos preseed copiados:"
+  ls -la "$EXTRACT_DIR"/preseed*
 else
   echo "❌ Error: No se pudo copiar preseed.cfg"
   exit 1
@@ -167,7 +213,7 @@ if [[ -f "$GRUB_CFG" ]]; then
 
 menuentry "Automated Install with ResetComputers (KDE + SSH)" {
     set background_color=black
-    linux /install.amd/vmlinuz auto=true priority=critical preseed/file=/cdrom/preseed.cfg quiet
+    linux /install.amd/vmlinuz auto=true priority=critical preseed/file=/cdrom/preseed.cfg preseed/file=/cdrom/preseed.txt preseed/file=/cdrom/preseed.cfg.bak quiet
     initrd /install.amd/initrd.gz
 }
 GRUB_EOF
@@ -189,7 +235,7 @@ if [[ -f "$TXT_CFG" ]]; then
 label auto
   menu label ^Automated Install with ResetComputers (KDE + SSH)
   kernel /install.amd/vmlinuz
-  append auto=true priority=critical preseed/file=/cdrom/preseed.cfg initrd=/install.amd/initrd.gz quiet
+  append auto=true priority=critical preseed/file=/cdrom/preseed.cfg preseed/file=/cdrom/preseed.txt preseed/file=/cdrom/preseed.cfg.bak initrd=/install.amd/initrd.gz quiet
 TXT_EOF
   echo "✅ txt.cfg modificado correctamente"
 else
@@ -250,6 +296,7 @@ else
 fi
 
 echo "✅ ISO personalizada generada en: $OUTPUT_ISO"
+echo "🕐 Timestamp de generación: $TIMESTAMP"
 
 # 🔐 Asegurar que la ISO sea legible por otros usuarios
 chmod 644 "$OUTPUT_ISO"
@@ -269,6 +316,17 @@ echo "🔐 INFORMACIÓN IMPORTANTE:"
 echo "   Usuario: usuario"
 echo "   Contraseña: $PASSWORD"
 echo "   Root password: $PASSWORD"
+echo "   Timestamp ISO: $TIMESTAMP"
+echo ""
+echo "🔍 PARA VERIFICAR QUE PRESEED FUNCIONA:"
+echo "   1. Durante la instalación, presiona Ctrl+Alt+F1"
+echo "   2. Ejecuta: cat /tmp/preseed_debug.log"
+echo "   3. Deberías ver los mensajes de debug del preseed"
+echo ""
+echo "⚠️  NOTA IMPORTANTE PARA VENTOY:"
+echo "   - El archivo preseed se copió en múltiples ubicaciones"
+echo "   - Si no funciona, verifica el log de debug para ver dónde se monta la ISO"
+echo "   - Ventoy puede montar en /run/media/ en lugar de /cdrom/"
 echo ""
 
 echo "📁 Estructura de directorios creada en: $DEBIAN_CUSTOM"
