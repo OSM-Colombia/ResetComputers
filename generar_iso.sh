@@ -123,15 +123,20 @@ d-i time/zone string America/Bogota
 d-i clock-setup/ntp boolean false
 d-i clock-setup/ntp-server string
 
-### Particionado automático (todo en /)
+### Particionado automático (todo el disco para máquinas grandes)
 d-i partman-auto/method string regular
 d-i partman-auto/choose_recipe select atomic
 d-i partman-auto/init_automatically_partition select biggest_free
+d-i partman-auto/select_disk select largest_free
 d-i partman/confirm_write_new_label boolean true
 d-i partman/choose_partition select finish
 d-i partman/confirm boolean true
 d-i partman/confirm_nooverwrite boolean true
-d-i partman-auto/expert_recipe string
+
+### Debug: Logging del proceso de particionado
+d-i preseed/early_command string echo "PARTITION DEBUG: Iniciando proceso de particionado..." >> /tmp/preseed_debug.log
+d-i preseed/early_command string echo "PARTITION DEBUG: Método: regular, Receta: atomic" >> /tmp/preseed_debug.log
+d-i preseed/early_command string echo "PARTITION DEBUG: Selección de disco: largest_free" >> /tmp/preseed_debug.log
 
 ### Repositorios (sin mirror)
 d-i apt-setup/use_mirror boolean false
@@ -154,6 +159,11 @@ d-i tasksel/first multiselect standard, kde-desktop, ssh-server
 ### Finalización
 d-i finish-install/reboot_in_progress note
 d-i preseed/late_command string \
+    echo "LATE DEBUG: Proceso de particionado completado - $(date)" > /target/tmp/partition_complete.log && \
+    echo "LATE DEBUG: Disco seleccionado:" >> /target/tmp/partition_complete.log && \
+    lsblk >> /target/tmp/partition_complete.log 2>&1 && \
+    echo "LATE DEBUG: Particiones creadas:" >> /target/tmp/partition_complete.log && \
+    cat /target/proc/partitions >> /target/tmp/partition_complete.log 2>&1 && \
     cp -r /cdrom/project /target/opt/ResetComputers && \
     chmod +x /target/opt/ResetComputers/install-env.sh && \
     chroot /target /opt/ResetComputers/install-env.sh
@@ -176,6 +186,16 @@ d-i preseed/early_command string echo "PRESEED DEBUG: Contenido de /run/media:" 
 d-i preseed/early_command string ls -la /run/media/ 2>/dev/null >> /tmp/preseed_debug.log
 d-i preseed/early_command string echo "PRESEED DEBUG: Variables de entorno:" >> /tmp/preseed_debug.log
 d-i preseed/early_command string env | grep -i preseed >> /tmp/preseed_debug.log
+
+### Debug: Información detallada de discos
+d-i preseed/early_command string echo "DISK DEBUG: Información de discos disponibles:" >> /tmp/preseed_debug.log
+d-i preseed/early_command string fdisk -l >> /tmp/preseed_debug.log 2>&1
+d-i preseed/early_command string echo "DISK DEBUG: Dispositivos de bloque:" >> /tmp/preseed_debug.log
+d-i preseed/early_command string lsblk >> /tmp/preseed_debug.log 2>&1
+d-i preseed/early_command string echo "DISK DEBUG: Tamaños de discos:" >> /tmp/preseed_debug.log
+d-i preseed/early_command string lsblk -o NAME,SIZE,TYPE,MOUNTPOINT >> /tmp/preseed_debug.log 2>&1
+d-i preseed/early_command string echo "DISK DEBUG: Información de particiones:" >> /tmp/preseed_debug.log
+d-i preseed/early_command string cat /proc/partitions >> /tmp/preseed_debug.log 2>&1
 EOF
 
 # 📥 Copiar preseed.cfg a múltiples ubicaciones para compatibilidad con Ventoy
@@ -367,6 +387,12 @@ echo "   1. Durante la instalación, presiona Ctrl+Alt+F1"
 echo "   2. Ejecuta: cat /tmp/preseed_debug.log"
 echo "   3. Deberías ver los mensajes de debug del preseed"
 echo ""
+echo "💾 PARA VERIFICAR SELECCIÓN DE DISCO:"
+echo "   1. Durante la instalación, presiona Ctrl+Alt+F1"
+echo "   2. Ejecuta: cat /tmp/preseed_debug.log | grep 'DISK DEBUG'"
+echo "   3. Ejecuta: cat /tmp/preseed_debug.log | grep 'PARTITION DEBUG'"
+echo "   4. Después de la instalación, revisa: /tmp/partition_complete.log"
+echo ""
 echo "⚠️  NOTA IMPORTANTE PARA VENTOY:"
 echo "   - El archivo preseed se copió en múltiples ubicaciones"
 echo "   - Se creó un script de inicialización (init-preseed.sh) para Ventoy"
@@ -384,4 +410,8 @@ echo "   ├── build/    - ISO personalizada generada"
 echo "   └── scripts/  - Scripts de automatización"
 echo ""
 echo "🔄 Para generar otra ISO, simplemente ejecuta: $SCRIPTS_DIR/$(basename "$0")"
+
+echo "Para escribir la ISO en una USB, usa el siguiente comando:"
+echo "sudo dd if=$OUTPUT_ISO of=/dev/sdX bs=4M status=progress && sync"
+
 
