@@ -3,7 +3,7 @@
 # Prepara el ambiente para que todo se pueda configurar.
 # Se debe ejecutar con root.
 #
-# Autor: Andres Gomez - AngocA
+# Autor: Andres Gomez - AngocA, Alvarado Ludwig - Ludway
 # Version: 2024-11-04
 declare -r VERSION="2024-11-04"
 
@@ -29,7 +29,7 @@ ambiente para su siguiente uso.
 
 El script se debe ejecutar como root.
 
-Autor: Andrés Gómez Casanova - AngocA
+Autor: Andrés Gómez Casanova - AngocA, Alvarado Ludwig - Ludway
 Version: ${VERSION}
 EOT
 }
@@ -99,8 +99,9 @@ function installTools() {
 function installODM() {
  apt install -y python3
  apt install -y python3-pip
- apt install -y docker
- apt install -y docker-compose
+ apt-get install ca-certificates curl
+ install -m 0755 -d /etc/apt/keyrings
+ curl -fsSL https://download.docker.com/linux/debian/gpg
 
  cd
 
