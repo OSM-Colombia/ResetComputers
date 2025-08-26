@@ -3,17 +3,22 @@ Script para resetear el usuario mapeador de los computadores
 
 ## Preparación manual
 
-Descargar o clonar este repositorio:
+Mientras instalar Debian, debes crear un usuario llamado ```administrador``` y las contraseñas deben ser las de la bóveda.
+
+Una vez terminada la instalación de Debian, reinicias e inicias sesión con el usuario administrador. Abres una terminal como Konsole y descargas o clonas este repositorio en el home:
 
 ```bash
 git clone https://github.com/OSM-Colombia/ResetComputers.git
+cd ResetComputers
+su -
 ```
 
 ## Instalación
 
-Ejecutar el siguiente script al finalizar la instalación de Debian. Crea los usuarios, instala las aplicaciones y deja el ambiente para que un mapeador pueda usar la máquina para comenzar en OSM.
+Crea los usuarios, instala las aplicaciones y deja el ambiente para que un mapeador pueda usar la máquina para comenzar en OSM.
 
 ```bash
+# Como root
 install-env.sh
 ```
 
