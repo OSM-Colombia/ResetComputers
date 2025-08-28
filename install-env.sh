@@ -5,10 +5,13 @@
 #
 # Autor: Andres Gomez - AngocA, Alvarado Ludwig - Ludway
 # Version: 2024-11-04
-declare -r VERSION="2024-11-04"
+declare -r VERSION_SCRIPT="2024-11-04"
 
 # Código de error cuando el script no se ejecuta como root.
 declare -r EXIT_ERROR_NON_ROOT=254
+
+# Directorio para descarga de componentes.
+declare -r DIR_RESET_DIRECTORY="/tmp/ResetComputers_tmp"
 
 # FUNCIONES.
 
@@ -30,7 +33,7 @@ ambiente para su siguiente uso.
 El script se debe ejecutar como root.
 
 Autor: Andrés Gómez Casanova - AngocA, Alvarado Ludwig - Ludway
-Version: ${VERSION}
+Version: ${VERSION_SCRIPT}
 EOT
 }
 
@@ -67,26 +70,32 @@ function installJosm() {
  rm OpenWebStart_linux_*.deb
 
  # Descarga josm.jnlp
- cd ../../Descargas
+ mkdir -p "${DIR_RESET_DIRECTORY}"
+ cd "${DIR_RESET_DIRECTORY}"
  rm -f josm.jnlp
  wget https://josm.openstreetmap.de/download/josm.jnlp
  cd -
 }
 
-# Instala otras herramientas posiblemente necesarias.
-function installTools() {
+# Instala Mapillary.
+function installMapillary() {
  # Instala Mapillary
- cd ../../Descargas
+ mkdir -p "${DIR_RESET_DIRECTORY}"
+ cd "${DIR_RESET_DIRECTORY}"
  rm -f Mapillary
  wget -U Mozilla https://tools.mapillary.com/uploader/download/linux
  mv linux Mapillary
  chmod +x Mapillary
- cd
+ cd -
+}
 
+# Instala otras herramientas posiblemente necesarias.
+function installTools() {
  # Instala Gimp.
+ apt update
  apt install -y gimp
  apt install -y gimp-help-es
- apt install -y gimp-plugin-registry
+ #TODO apt install -y gimp-plugin-registry
 
  # Instala Inskcape.
  apt-get install -y inkscape
@@ -99,16 +108,22 @@ function installTools() {
 function installODM() {
  apt install -y python3
  apt install -y python3-pip
+
+ # Instala Docker
+ apt-get update
+ # Add Docker's official GPG key:
  apt-get install ca-certificates curl
  install -m 0755 -d /etc/apt/keyrings
  curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
  chmod a+r /etc/apt/keyrings/docker.asc
+
+ # Add the repository to Apt sources:
  echo \
-     "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
-     $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-     tee /etc/apt/sources.list.d/docker.list > /dev/null
+   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+   $(. /etc/os-release && env -i bash -c '. /etc/os-release; echo $VERSION_CODENAME') stable" | \
+   tee /etc/apt/sources.list.d/docker.list > /dev/null
  apt-get update
- apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+ apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
  cd
 
@@ -122,7 +137,7 @@ function installODM() {
 
 # Configura el crontab.
 function configureCrontab() {
- if [ "$(crontab -l | grep webodm | wc -l)" -eq 0 ]; then
+ if [ "$(crontab -l | grep "webodm" | wc -l)" -eq 0 ]; then
   crontab -l | { cat; echo "@reboot cd /root/WebODM ; nohup ./webodm.sh start & "; } | crontab -
  fi
 }
@@ -140,6 +155,9 @@ customizeAdmin
 
 # Instala JOSM.
 installJosm
+
+# Instala Mapillary
+installMapillary
 
 # Instala otras herramientas.
 installTools
